@@ -1,0 +1,65 @@
+services:
+  webtop:
+    image: lscr.io/linuxserver/webtop:latest
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Etc/UTC
+    volumes:
+      - ./hosts:/etc/hosts:ro
+    ports:
+      - 3000:3000
+    shm_size: "1gb"
+    restart: unless-stopped
+    networks:
+      traefik:
+        ipv4_address: 172.96.1.9
+
+  traefik:
+    image: traefik:v3.6
+    command:
+      - --log.level=DEBUG
+      - --api.insecure=true
+      - --providers.docker=true
+      - --entrypoints.web.address=:80
+      - --entrypoints.websecure.address=:443
+      - --entryPoints.websecure.http.tls=true
+      - --providers.file.directory=/etc/traefik/dynamic
+      - --providers.file.watch=true
+    ports:
+      - 80:80
+      - 443:443
+      - 8080:8080
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./certs:/certs:ro
+      - ./dynamic:/etc/traefik/dynamic:ro
+    labels:
+      traefik.enable: true
+      traefik.http.routers.dashboard.rule: Host(`dashboard.umbrel.simonhaas.eu`)
+      traefik.http.routers.dashboard.entrypoints: websecure
+      traefik.http.routers.dashboard.service: api@internal
+      traefik.http.routers.dashboard.tls: true
+    restart: unless-stopped
+    networks:
+      traefik:
+        ipv4_address: 172.96.1.10
+
+  whoami:
+    image: traefik/whoami
+    restart: unless-stopped
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.whoami.rule=Host(`whoami.umbrel.simonhaas.eu`)
+      - traefik.http.routers.whoami.entrypoints=websecure
+      - traefik.http.routers.whoami.tls=true
+    networks:
+      traefik:
+        ipv4_address: 172.96.1.11
+      
+networks:
+  traefik:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.96.1.0/24

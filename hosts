@@ -1,0 +1,10 @@
+127.0.0.1       localhost
+::1     localhost ip6-localhost ip6-loopback
+fe00::  ip6-localnet
+ff00::  ip6-mcastprefix
+ff02::1 ip6-allnodes
+ff02::2 ip6-allrouters
+172.18.0.2      e586adc2604d
+
+172.96.1.10 dashboard.umbrel.simonhaas.eu
+172.96.1.10 whoami.umbrel.simonhaas.eu
