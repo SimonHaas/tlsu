@@ -11,17 +11,18 @@ services:
       - --providers.file.directory=/etc/traefik/dynamic
       - --providers.file.watch=true
       - --entryPoints.web.address=:80
-      - --experimental.localPlugins.traefikServiceFabricPlugin.modulename=github.com/dariopb/traefikServiceFabricPlugin
-      - --provider.plugin.traefikServiceFabricPlugin.pollInterval=4s
-      - --provider.plugin.traefikServiceFabricPluginclusterManagementURL=http://dariotraefik1.southcentralus.cloudapp.azure.com:19080/
+      - --experimental.localPlugins.pluginproviderdemo.modulename=github.com/traefik/pluginproviderdemo
+      - --experimental.localPlugins.plugindemo.modulename=github.com/traefik/plugindemo
+      - --experimental.localPlugins.umbrel.modulename=github.com/simonhaas/umbrel
     ports:
-      - 8880:80
-      - 8443:443
-      - 8088:8080
+      - $TRAEFIK_HTTP_PORT:80
+      - $TRAEFIK_HTTPS_PORT:443
+      - $TRAEFIK_ADMIN_PORT:8080
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - ./certs:/certs:ro
       - ./dynamic:/etc/traefik/dynamic:ro
+      - ./plugins-local:/root/plugins-local
     labels:
       traefik.enable: true
       traefik.http.routers.dashboard.rule: Host(`dashboard.umbrel.simonhaas.eu`)
@@ -43,7 +44,7 @@ services:
     image: dockurr/umbrel
     pid: host
     ports:
-      - 80:80
+      - $UMBREL_HTTP_PORT:80
     volumes:
       - ./umbrel:/data
       - /var/run/docker.sock:/var/run/docker.sock
