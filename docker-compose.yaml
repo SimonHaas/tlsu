@@ -27,7 +27,7 @@ services:
       - --providers.file.directory=/etc/traefik/dynamic
       - --providers.file.watch=true
     ports:
-      - 80:80
+      #- 80:80
       - 443:443
       - 8080:8080
     volumes:
@@ -57,6 +57,17 @@ services:
       traefik:
         ipv4_address: 172.96.1.11
       
+  umbrel:
+    image: dockurr/umbrel
+    pid: host
+    ports:
+      - 80:80
+    volumes:
+      - ./umbrel:/data
+      - /var/run/docker.sock:/var/run/docker.sock
+    restart: unless-stopped
+    stop_grace_period: 1m
+
 networks:
   traefik:
     driver: bridge
