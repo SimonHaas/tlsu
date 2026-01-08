@@ -1,0 +1,16 @@
+
+http:
+  routers:
+    uptime-kuma-router:
+      rule: "Host(`uptime.umbrel.simonhaas.eu`)"
+      entryPoints:
+        - websecure
+      service: uptime-kuma-service
+      tls: true
+
+  services:
+    uptime-kuma-service:
+      loadBalancer:
+        servers:
+          #- url: "http://10.21.0.5:3001" # uptime-kuma_server_1
+          - url: "http://10.21.0.6:8385" # uptime-kuma_app_proxy_1

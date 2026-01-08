@@ -1,19 +1,19 @@
 services:
-  webtop:
-    image: lscr.io/linuxserver/webtop:latest
-    environment:
-      PUID: 1000
-      PGID: 1000
-      TZ: Etc/UTC
-    volumes:
-      - ./hosts:/etc/hosts:ro
-    ports:
-      - 3000:3000
-    shm_size: "1gb"
-    restart: unless-stopped
-    networks:
-      traefik:
-        ipv4_address: 172.96.1.9
+  # webtop:
+  #   image: lscr.io/linuxserver/webtop:latest
+  #   environment:
+  #     PUID: 1000
+  #     PGID: 1000
+  #     TZ: Etc/UTC
+  #   volumes:
+  #     - ./hosts:/etc/hosts:ro
+  #   ports:
+  #     - 3000:3000
+  #   shm_size: "1gb"
+  #   restart: unless-stopped
+  #   networks:
+  #     traefik:
+  #       ipv4_address: 172.96.1.9
 
   traefik:
     image: traefik:v3.6
@@ -27,9 +27,9 @@ services:
       - --providers.file.directory=/etc/traefik/dynamic
       - --providers.file.watch=true
     ports:
-      #- 80:80
-      - 443:443
-      - 8080:8080
+      - 8880:80
+      - 8443:443
+      - 8088:8080
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - ./certs:/certs:ro
@@ -41,9 +41,10 @@ services:
       traefik.http.routers.dashboard.service: api@internal
       traefik.http.routers.dashboard.tls: true
     restart: unless-stopped
-    networks:
-      traefik:
-        ipv4_address: 172.96.1.10
+    # networks:
+    #   traefik:
+    #     ipv4_address: 172.96.1.10
+    #network_mode: bridge
 
   whoami:
     image: traefik/whoami
@@ -53,10 +54,11 @@ services:
       traefik.http.routers.whoami.rule: Host(`whoami.umbrel.simonhaas.eu`)
       traefik.http.routers.whoami.entrypoints: websecure
       traefik.http.routers.whoami.tls: true
-    networks:
-      traefik:
-        ipv4_address: 172.96.1.11
-      
+    # networks:
+    #   traefik:
+    #     ipv4_address: 172.96.1.11
+    #network_mode: bridge
+
   umbrel:
     image: dockurr/umbrel
     pid: host
@@ -67,10 +69,16 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
     restart: unless-stopped
     stop_grace_period: 1m
+    #network_mode: bridge
+
+# networks:
+#   traefik:
+#     driver: bridge
+#     ipam:
+#       config:
+#         - subnet: 172.96.1.0/24
 
 networks:
-  traefik:
-    driver: bridge
-    ipam:
-      config:
-        - subnet: 172.96.1.0/24
+  default:
+    external: true
+    name: umbrel_main_network
