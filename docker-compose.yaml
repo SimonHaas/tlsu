@@ -20,9 +20,9 @@ services:
       - $TRAEFIK_ADMIN_PORT:8080
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
-      - ./certs:/certs:ro
-      - ./dynamic:/etc/traefik/dynamic:ro
-      - ./plugins-local:/root/plugins-local
+      - ${PROJECT_DIR}/certs:/certs:ro
+      - ${PROJECT_DIR}/dynamic:/etc/traefik/dynamic:ro
+      - ${PROJECT_DIR}/plugins-local:/plugins-local:ro
     labels:
       traefik.enable: true
       traefik.http.routers.dashboard.rule: Host(`dashboard.umbrel.simonhaas.eu`)
@@ -46,7 +46,7 @@ services:
     ports:
       - $UMBREL_HTTP_PORT:80
     volumes:
-      - ./umbrel:/data
+      - ${PROJECT_DIR}/umbrel:/data
       - /var/run/docker.sock:/var/run/docker.sock
     restart: unless-stopped
     stop_grace_period: 1m

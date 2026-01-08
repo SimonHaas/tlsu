@@ -3,3 +3,6 @@ type: provider
 import: github.com/simonhaas/umbrel
 
 summary: "A custom provider for Umbrel services in Traefik"
+
+testData:
+  test: test
