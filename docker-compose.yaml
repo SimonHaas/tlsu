@@ -4,16 +4,18 @@ services:
     command:
       - --log.level=DEBUG
       - --api.insecure=true
-      - --providers.docker=true
       - --entrypoints.web.address=:80
       - --entrypoints.websecure.address=:443
       - --entryPoints.websecure.http.tls=true
-      - --providers.file.directory=/etc/traefik/dynamic
-      - --providers.file.watch=true
+      #- --providers.docker=true
+      #- --providers.file.directory=/etc/traefik/dynamic
+      #- --providers.file.watch=true
       - --entryPoints.web.address=:80
       - --experimental.localPlugins.pluginproviderdemo.modulename=github.com/traefik/pluginproviderdemo
+      - --providers.plugin.pluginproviderdemo.pollInterval.pollInterval=4s
       - --experimental.localPlugins.plugindemo.modulename=github.com/traefik/plugindemo
       - --experimental.localPlugins.umbrel.modulename=github.com/simonhaas/umbrel
+      - --providers.plugin.umbrel.pollInterval.pollInterval=4s
     ports:
       - $TRAEFIK_HTTP_PORT:80
       - $TRAEFIK_HTTPS_PORT:443

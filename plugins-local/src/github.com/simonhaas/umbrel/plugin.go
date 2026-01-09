@@ -50,6 +50,8 @@ type PublishedPort struct {
 // GetContainersInfo connects to the Docker socket at unixPath (e.g. "/var/run/docker.sock")
 // and returns each container's name(s), network IP(s) and published ports.
 func GetContainersInfo(ctx context.Context, unixPath string) ([]ContainerInfo, error) {
+	fmt.Println("umbrel - GetContainersInfo")
+	
 	if unixPath == "" {
 		unixPath = "/var/run/docker.sock"
 	}
@@ -184,6 +186,8 @@ func doUnixRequest(ctx context.Context, client *http.Client, rawurl string) ([]b
 
 // New creates a new Provider plugin.
 func New(ctx context.Context, config *Config, name string) (*Provider, error) {
+	fmt.Println("umbrel - New")
+
 	// default poll interval
 	pi := 10 * time.Second
 
@@ -195,6 +199,8 @@ func New(ctx context.Context, config *Config, name string) (*Provider, error) {
 
 // Init the provider.
 func (p *Provider) Init() error {
+	fmt.Println("umbrel - Init")
+	
 	if p.pollInterval <= 0 {
 		return fmt.Errorf("poll interval must be greater than 0")
 	}
@@ -203,6 +209,8 @@ func (p *Provider) Init() error {
 
 // Provide creates and sends dynamic configuration to Traefik.
 func (p *Provider) Provide(cfgChan chan<- json.Marshaler) error {
+	fmt.Println("umbrel - Provide")
+	
 	ctx, cancel := context.WithCancel(context.Background())
 	p.cancel = cancel
 
@@ -220,6 +228,8 @@ func (p *Provider) Provide(cfgChan chan<- json.Marshaler) error {
 }
 
 func (p *Provider) loadConfiguration(ctx context.Context, cfgChan chan<- json.Marshaler) {
+	fmt.Println("umbrel - loadConfiguration")
+
 	ticker := time.NewTicker(p.pollInterval)
 	defer ticker.Stop()
 
@@ -305,6 +315,8 @@ func (p *Provider) loadConfiguration(ctx context.Context, cfgChan chan<- json.Ma
 
 // Stop to stop the provider and the related go routines.
 func (p *Provider) Stop() error {
+	fmt.Println("umbrel - Stop")
+
 	if p.cancel != nil {
 		p.cancel()
 	}
