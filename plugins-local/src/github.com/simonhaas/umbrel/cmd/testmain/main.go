@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"strings"
 	"time"
 
 	"github.com/simonhaas/umbrel"
@@ -24,28 +23,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	// only include containers attached to this network with names ending in _app_proxy_1
-	networkFilter := "umbrel_main_network"
-	nameSuffix := "_app_proxy_1"
 	for _, ci := range infos {
-		if ci.Networks == nil {
-			continue
-		}
-		if _, ok := ci.Networks[networkFilter]; !ok {
-			continue
-		}
-
-		match := false
-		for _, n := range ci.Names {
-			if strings.HasSuffix(n, nameSuffix) {
-				match = true
-				break
-			}
-		}
-		if !match {
-			continue
-		}
-
 		fmt.Printf("ID: %s\n", ci.ID)
 		fmt.Printf("Names: %v\n", ci.Names)
 		fmt.Printf("Networks: %v\n", ci.Networks)
