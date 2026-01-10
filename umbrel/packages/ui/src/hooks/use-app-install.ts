@@ -20,49 +20,50 @@ export const pollStates = [
 
 export function useUninstallAllApps() {
 	const apps = trpcReact.apps.list.useQuery().data
-	const utils = trpcReact.useUtils()
+	const ctx = trpcReact.useContext()
 
-	const mut = useMutation({
-		mutationFn: async () => {
+	const mut = useMutation(
+		async () => {
 			for (const app of apps ?? []) {
 				await trpcClient.apps.uninstall.mutate({appId: app.id})
 			}
 		},
-
-		onSuccess: () => {
-			toast(t('apps.uninstalled-all.success'))
-			utils.invalidate()
+		{
+			onSuccess: () => {
+				toast(t('apps.uninstalled-all.success'))
+				ctx.invalidate()
+			},
 		},
-	})
+	)
 
 	return () => mut.mutate()
 }
 
 // TODO: rename to something that covers more than install
 export function useAppInstall(id: string) {
-	const utils = trpcReact.useUtils()
+	const ctx = trpcReact.useContext()
 	const appStateQ = trpcReact.apps.state.useQuery({appId: id})
 
 	const refreshAppStates = () => {
 		// Invalidate this app's state
-		utils.apps.state.invalidate({appId: id})
+		ctx.apps.state.invalidate({appId: id})
 		// Invalidate list of apps on desktop
-		utils.apps.list.invalidate()
+		ctx.apps.list.invalidate()
 		// Invalidate latest app opens
-		utils.user.get.invalidate()
+		ctx.user.get.invalidate()
 	}
 
 	const makeOptimisticOnMutate = (optimisticState: (typeof pollStates)[number]) => () => {
 		// Optimistic because actions do not return until complete
 		// see: https://create.t3.gg/en/usage/trpc#optimistic-updates
-		utils.apps.state.cancel()
-		utils.apps.state.setData({appId: id}, {state: optimisticState, progress: 0})
+		ctx.apps.state.cancel()
+		ctx.apps.state.setData({appId: id}, {state: optimisticState, progress: 0})
 
 		// Make sure apps list reflects the change in time. This is necessary
 		// because a request to, say, install an app does not return until the
 		// action is complete. TODO: Refactor the backend to set the state, return
 		// early and run the actual action asynchronously.
-		setTimeout(() => utils.apps.list.invalidate(), 2000)
+		setTimeout(() => ctx.apps.list.invalidate(), 2000)
 	}
 
 	const startMut = trpcReact.apps.start.useMutation({

@@ -53,13 +53,19 @@ export function DesktopContent({onSearchClick}: {onSearchClick?: () => void}) {
 			className='flex h-full w-full select-none flex-col items-center justify-between'
 			variants={variants}
 			animate={variant}
-			initial={{opacity: 1}}
+			initial={{opacity: 0}}
 			transition={{duration: 0.15, ease: 'easeOut'}}
 		>
 			<div className='pt-6 md:pt-8' />
 			<Header userName={name} />
 			<div className='pt-6 md:pt-8' />
-			<div className='flex w-full grow overflow-hidden'>
+			<motion.div
+				className='flex w-full grow overflow-hidden'
+				initial={{opacity: 0, scale: 1}}
+				animate={{opacity: 1, scale: 1}}
+				exit={{opacity: 0, scale: 1}}
+				transition={variant === 'overlayed' ? {duration: 0} : {duration: 0.2, ease: 'easeOut', delay: 0.2}}
+			>
 				<AppGrid
 					widgets={widgets.selected.map((widget, i) => (
 						<motion.div
@@ -67,16 +73,20 @@ export function DesktopContent({onSearchClick}: {onSearchClick?: () => void}) {
 							layout
 							initial={{
 								opacity: 0,
+								y: 50,
 							}}
 							animate={{
 								opacity: 1,
+								y: 0,
 							}}
 							exit={{
 								opacity: 0,
+								scale: 0.5,
 							}}
 							transition={{
-								duration: 0.5,
-								ease: 'easeInOut',
+								delay: i * 0.02,
+								duration: 0.4,
+								ease: 'easeOut',
 							}}
 						>
 							<WidgetWrapper
@@ -99,19 +109,20 @@ export function DesktopContent({onSearchClick}: {onSearchClick?: () => void}) {
 							layout
 							initial={{
 								opacity: 0,
-								scale: 0.75,
+								y: 50,
 							}}
 							animate={{
 								opacity: 1,
-								scale: 1,
+								y: 0,
+								// scale: 1,
 							}}
 							exit={{
 								opacity: 0,
-								scale: 0.75,
+								scale: 0.5,
 							}}
 							transition={{
-								delay: (widgets.selected.length * 1.5 + i) * 0.01,
-								duration: 0.2,
+								delay: (widgets.selected.length * 3 + i) * 0.02,
+								duration: 0.4,
 								ease: 'easeOut',
 							}}
 						>
@@ -119,7 +130,7 @@ export function DesktopContent({onSearchClick}: {onSearchClick?: () => void}) {
 						</motion.div>
 					))}
 				/>
-			</div>
+			</motion.div>
 			<Search onClick={onSearchClick} />
 			<div className='pt-6' />
 			<DockSpacer />

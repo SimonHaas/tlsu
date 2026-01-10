@@ -26,24 +26,11 @@ const VideoViewer = lazy(() => import('@/features/files/components/file-viewer/v
 
 export const BASE_ROUTE_PATH = '/files' as const
 export const HOME_PATH = '/Home' as const
+export const RECENTS_PATH = '/Recents' as const
 export const TRASH_PATH = '/Trash' as const
 export const APPS_PATH = '/Apps' as const
 export const EXTERNAL_STORAGE_PATH = '/External' as const
-export const NETWORK_STORAGE_PATH = '/Network' as const
-export const BACKUPS_PATH = '/Backups' as const
-
-// NOTE: Search and Recents are not real directories on disk. They are
-// pseudo-directories, i.e. they are handled client-side only and are just
-// virtual routes that show a flat list of file items returned by the backend
-// search and recents endpoints.
-export const SEARCH_PATH = '/Search' as const
-export const RECENTS_PATH = '/Recents' as const
-
-// Directory listing constants
-export const USE_LIST_DIRECTORY_LOAD_ITEMS = {
-	INITIAL: 250, // Number of items to load when first viewing a directory
-	ON_SCROLL_END: 250, // Number of items to load when user scrolls near the end
-} as const
+export const ITEMS_PER_PAGE = 100 as const
 
 // TODO: define it in a common place for client and server
 export const SUPPORTED_ARCHIVE_EXTRACT_EXTENSIONS = [
@@ -61,12 +48,20 @@ export const SORT_BY_OPTIONS = [
 	{sortBy: 'name', labelTKey: 'files-sort.name'},
 	{sortBy: 'modified', labelTKey: 'files-sort.modified'},
 	{sortBy: 'size', labelTKey: 'files-sort.size'},
-	// {sortBy: 'created', labelTKey: 'files-sort.created'},
+	{sortBy: 'created', labelTKey: 'files-sort.created'},
 	{sortBy: 'type', labelTKey: 'files-sort.type'},
 ] as const
 
 // ENSURE THESE 2 SETS MATCH THE ONES IN umbreld/source/modules/files/thumbnails.ts
-export const IMAGE_EXTENSIONS_WITH_IMAGE_THUMBNAILS = new Set(['.jpg', '.jpeg', '.png', '.gif', '.webp', '.avif'])
+export const IMAGE_EXTENSIONS_WITH_IMAGE_THUMBNAILS = new Set([
+	'.jpg',
+	'.jpeg',
+	'.png',
+	'.gif',
+	'.webp',
+	'.avif',
+	'.heic',
+])
 export const VIDEO_EXTENSIONS_WITH_IMAGE_THUMBNAILS = new Set(['.mov', '.mp4', '.3gp', '.mkv', '.avi'])
 
 export const FILE_TYPE_MAP = {

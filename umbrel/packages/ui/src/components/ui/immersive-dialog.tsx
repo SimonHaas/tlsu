@@ -1,6 +1,6 @@
 import {Dialog, DialogClose, DialogContent, DialogOverlay, DialogPortal, DialogTrigger} from '@radix-ui/react-dialog'
 import {motion} from 'framer-motion'
-import {Children, ComponentPropsWithoutRef, ForwardedRef, forwardRef, ReactNode} from 'react'
+import {Children, ForwardedRef, forwardRef, ReactNode} from 'react'
 import {RiCloseLine} from 'react-icons/ri'
 
 import {ScrollArea} from '@/shadcn-components/ui/scroll-area'
@@ -26,37 +26,30 @@ export function ImmersiveDialogSeparator() {
 export const ImmersiveDialog = Dialog
 export const ImmersiveDialogTrigger = DialogTrigger
 
-function ForwardedImmersiveDialogContent(
-	{
-		children,
-		size = 'default',
-		short = false,
-		showScroll = false,
-		...contentProps
-	}: {
-		children: React.ReactNode
-		size?: 'default' | 'sm' | 'md' | 'lg' | 'xl'
-		short?: boolean
-		showScroll?: boolean
-	} & ComponentPropsWithoutRef<typeof DialogContent>,
-	ref: ForwardedRef<HTMLDivElement>,
-) {
+export function ImmersiveDialogContent({
+	children,
+	size = 'default',
+	short = false,
+	showScroll = false,
+}: {
+	children: React.ReactNode
+	size?: 'default' | 'md' | 'lg' | 'xl'
+	short?: boolean
+	showScroll?: boolean
+}) {
 	return (
 		<DialogContent
-			ref={ref}
 			className={cn(
 				dialogContentClass,
 				dialogContentAnimationClass,
 				dialogContentAnimationSlideClass,
 				short ? immersiveContentShortClass : immersiveContentTallClass,
 				// overrides default size
-				size === 'sm' && 'max-w-[600px]',
 				size === 'md' && 'max-w-[900px]',
 				size === 'lg' && 'max-w-[980px]',
 				size === 'xl' && 'max-w-[1440px]',
 				'p-0',
 			)}
-			{...contentProps}
 		>
 			{showScroll ? (
 				<ScrollArea dialogInset className='h-full'>
@@ -70,21 +63,11 @@ function ForwardedImmersiveDialogContent(
 	)
 }
 
-export const ImmersiveDialogContent = forwardRef(ForwardedImmersiveDialogContent)
-
-function ForwardedImmersiveDialogSplitContent(
-	{
-		children,
-		side,
-		...contentProps
-	}: {children: React.ReactNode; side: React.ReactNode} & ComponentPropsWithoutRef<typeof DialogContent>,
-	ref: ForwardedRef<HTMLDivElement>,
-) {
+export function ImmersiveDialogSplitContent({children, side}: {children: React.ReactNode; side: React.ReactNode}) {
 	return (
 		<DialogPortal>
 			<ImmersiveDialogOverlay />
 			<DialogContent
-				ref={ref}
 				className={cn(
 					dialogContentClass,
 					'bg-transparent shadow-none ring-2 ring-white/3', // remove shadow from `dialogContentClass`
@@ -93,7 +76,6 @@ function ForwardedImmersiveDialogSplitContent(
 					immersiveContentTallClass,
 					'flex flex-row justify-between gap-0 p-0',
 				)}
-				{...contentProps}
 			>
 				<section className='hidden w-[210px] flex-col items-center justify-center bg-black/40 md:flex md:rounded-l-20'>
 					{side}
@@ -108,8 +90,6 @@ function ForwardedImmersiveDialogSplitContent(
 		</DialogPortal>
 	)
 }
-
-export const ImmersiveDialogSplitContent = forwardRef(ForwardedImmersiveDialogSplitContent)
 
 const immersiveContentShortClass = tw`w-[calc(100%-40px)] max-w-[800px] max-h-[calc(100dvh-90px)]`
 const immersiveContentTallClass = tw`top-[calc(50%-30px)] max-h-[800px] w-[calc(100%-40px)] max-w-[800px] h-[calc(100dvh-90px)]`

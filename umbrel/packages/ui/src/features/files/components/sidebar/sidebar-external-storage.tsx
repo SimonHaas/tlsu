@@ -1,20 +1,15 @@
 import {AnimatePresence, motion} from 'framer-motion'
-import {useNavigate} from 'react-router-dom'
 
 import {SidebarExternalStorageItem} from '@/features/files/components/sidebar/sidebar-external-storage-item'
 import {useExternalStorage} from '@/features/files/hooks/use-external-storage'
-import type {ExternalStorageDevice} from '@/features/files/types'
-import {useQueryParams} from '@/hooks/use-query-params'
 import {ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger} from '@/shadcn-components/ui/context-menu'
 import {t} from '@/utils/i18n'
 
 export function SidebarExternalStorage() {
-	const {disks, isLoadingExternalStorage, ejectDisk, isExternalStorageSupported} = useExternalStorage()
-	const navigate = useNavigate()
-	const {addLinkSearchParams} = useQueryParams()
+	const {disks, isLoadingExternalStorage, ejectDisk, isUmbrelHome} = useExternalStorage()
 
-	// Don't render anything for non-supported devices
-	if (!isExternalStorageSupported) {
+	// Don't render anything for non-Umbrel Home devices
+	if (!isUmbrelHome) {
 		return null
 	}
 
@@ -25,7 +20,7 @@ export function SidebarExternalStorage() {
 
 	return (
 		<AnimatePresence initial={false}>
-			{disks.map((disk: ExternalStorageDevice) => (
+			{disks.map((disk) => (
 				<motion.div
 					key={`sidebar-external-storage-${disk.id}`}
 					initial={{opacity: 0, height: 0}}
@@ -38,41 +33,16 @@ export function SidebarExternalStorage() {
 							<div>
 								<SidebarExternalStorageItem
 									item={{
-										name: disk.name,
+										name: disk.label,
 										id: disk.id,
-										// If the drive requires formatting, don't show any partitions
-										partitions: !disk.isMounted
-											? []
-											: disk.partitions.map((partition: any) => ({
-													...partition,
-													mountpoint: partition.mountpoints?.[0] ?? '',
-												})),
+										partitions: disk.partitions,
 										size: disk.size,
-										isMounted: disk.isMounted,
-										isFormatting: disk.isFormatting,
-										transport: disk.transport,
 									}}
 								/>
 							</div>
 						</ContextMenuTrigger>
 						<ContextMenuContent>
-							{disk.isMounted && (
-								<ContextMenuItem onClick={() => ejectDisk({deviceId: disk.id})}>
-									{t('files-action.eject-disk')}
-								</ContextMenuItem>
-							)}
-							<ContextMenuItem
-								onClick={() => {
-									navigate({
-										search: addLinkSearchParams({
-											dialog: 'files-format-drive',
-											deviceId: disk.id,
-										}),
-									})
-								}}
-							>
-								{t('files-action.format-drive')}
-							</ContextMenuItem>
+							<ContextMenuItem onClick={() => ejectDisk({id: disk.id})}>{t('files-action.eject-disk')}</ContextMenuItem>
 						</ContextMenuContent>
 					</ContextMenu>
 				</motion.div>

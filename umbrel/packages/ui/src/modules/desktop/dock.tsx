@@ -1,6 +1,5 @@
 import {motion, useMotionValue} from 'framer-motion'
 import React, {Suspense} from 'react'
-import {ErrorBoundary} from 'react-error-boundary'
 import {useLocation} from 'react-router-dom'
 
 import {useAppsWithUpdates} from '@/hooks/use-apps-with-updates'
@@ -15,7 +14,6 @@ import {DockItem} from './dock-item'
 import {LogoutDialog} from './logout-dialog'
 
 const LiveUsageDialog = React.lazy(() => import('@/routes/live-usage'))
-const WhatsNewModal = React.lazy(() => import('@/routes/whats-new-modal').then((m) => ({default: m.WhatsNewModal})))
 
 const DOCK_BOTTOM_PADDING_PX = 10
 
@@ -77,9 +75,8 @@ export function Dock() {
 	return (
 		<>
 			<motion.div
-				initial={{translateY: 80, opacity: 0}}
-				animate={{translateY: 0, opacity: 1}}
-				transition={{type: 'spring', stiffness: 200, damping: 20, delay: 0.2, duration: 0.2}}
+				initial={{y: 0, opacity: 0}}
+				animate={{y: 0, opacity: 1}}
 				onPointerMove={(e) => e.pointerType === 'mouse' && mouseX.set(e.pageX)}
 				onPointerLeave={() => mouseX.set(Infinity)}
 				className={cn(dockClass, isMobile && 'gap-2')}
@@ -143,17 +140,9 @@ export function Dock() {
 				/>
 			</motion.div>
 			<LogoutDialog />
-
-			<ErrorBoundary fallbackRender={() => null}>
-				<Suspense>
-					<LiveUsageDialog />
-				</Suspense>
-			</ErrorBoundary>
-			<ErrorBoundary fallbackRender={() => null}>
-				<Suspense>
-					<WhatsNewModal />
-				</Suspense>
-			</ErrorBoundary>
+			<Suspense>
+				<LiveUsageDialog />
+			</Suspense>
 		</>
 	)
 }

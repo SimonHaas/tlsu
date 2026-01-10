@@ -21,30 +21,14 @@ export function useColorThief(ref: React.RefObject<HTMLImageElement>) {
 
 		const img = ref.current
 
-		const handleLoad = () => {
-			try {
+		if (img.complete) {
+			const rgbArr = colorThief.getPalette(img, colorCount)
+			setColors(processColors(rgbArr))
+		} else {
+			img.addEventListener('load', function () {
 				const rgbArr = colorThief.getPalette(img, colorCount)
 				setColors(processColors(rgbArr))
-			} catch (error) {
-				setColors(undefined) // Reset colors on error
-			}
-		}
-
-		const handleError = () => {
-			setColors(undefined) // Reset colors on image load error
-		}
-
-		if (img.complete) {
-			handleLoad()
-		} else {
-			img.addEventListener('load', handleLoad)
-			img.addEventListener('error', handleError)
-		}
-
-		// Cleanup function
-		return () => {
-			img.removeEventListener('load', handleLoad)
-			img.removeEventListener('error', handleError)
+			})
 		}
 	}, [intersection, ref])
 

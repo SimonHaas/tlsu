@@ -10,7 +10,7 @@ import {ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger} fr
 import {t} from '@/utils/i18n'
 
 export function PathBar() {
-	const {uiPath} = useNavigate()
+	const {currentPath} = useNavigate()
 	const [isEditing, setIsEditing] = useState(false)
 	const isMobile = useIsMobile()
 
@@ -22,7 +22,7 @@ export function PathBar() {
 				<PathBarContent
 					isEditing={isEditing}
 					isMobile={isMobile}
-					currentPath={uiPath}
+					currentPath={currentPath}
 					onInputClose={() => setIsEditing(false)}
 				/>
 			</ContextMenuTrigger>

@@ -4,7 +4,6 @@ import {ButtonLink} from '@/components/ui/button-link'
 import {NotificationBadge} from '@/components/ui/notification-badge'
 import {useAppsWithUpdates} from '@/hooks/use-apps-with-updates'
 import {useLinkToDialog} from '@/utils/dialog'
-import {t} from '@/utils/i18n'
 
 import {UpdatesDialogConnected} from './updates-dialog'
 
@@ -22,9 +21,9 @@ export function UpdatesButton() {
 	return (
 		<>
 			{/* w-auto because 'dialog' size buttons take up full width on mobile */}
-			<ButtonLink to={linkToDialog('updates')} size='md' className='relative w-auto' variant='primary'>
+			<ButtonLink to={linkToDialog('updates')} size='dialog' className='relative h-[33px] w-auto bg-white/10'>
 				<TbCircleArrowUp />
-				{t('app-store.updates')}
+				Updates
 				<NotificationBadge count={appsWithUpdates.length} />
 			</ButtonLink>
 			<UpdatesDialogConnected />

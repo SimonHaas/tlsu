@@ -3,17 +3,17 @@ import {trpcReact} from '@/trpc/trpc'
 
 export function useUpdateAllApps() {
 	const allAvailableApps = useAllAvailableApps()
-	const utils = trpcReact.useUtils()
+	const ctx = trpcReact.useContext()
 	const appsQ = trpcReact.apps.list.useQuery()
 	const updateMut = trpcReact.apps.update.useMutation({
 		onMutate: () => {
 			// Optimistic updates because otherwise it's too slow and feels like nothing is happening
-			utils.apps.state.cancel()
+			ctx.apps.state.cancel()
 			allAvailableApps?.apps?.map((app) => {
-				utils.apps.state.setData({appId: app.id}, {state: 'updating', progress: 0})
+				ctx.apps.state.setData({appId: app.id}, {state: 'updating', progress: 0})
 			})
 		},
-		onSuccess: () => utils.apps.list.invalidate(),
+		onSuccess: () => ctx.apps.list.invalidate(),
 	})
 
 	const updateAll = () => {
@@ -25,7 +25,7 @@ export function useUpdateAllApps() {
 	}
 
 	const isLoading = appsQ.isLoading || allAvailableApps.isLoading
-	const isUpdating = updateMut.isPending
+	const isUpdating = updateMut.isLoading
 
 	return {updateAll, isLoading, isUpdating}
 }

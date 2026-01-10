@@ -69,7 +69,7 @@ export default class AppRepository {
 	// or not cloned at all, it will never be in a partial state while the clone is in progress.
 	// Can also be used to atomically update instead of a pull.
 	async atomicClone() {
-		const temporaryPath = `${this.#umbreld.dataDirectory}/app-stores/.tmp/${randomToken(64)}`
+		const temporaryPath = `${this.#umbreld.dataDirectory}/app-stores/.tmp/${await randomToken(64)}`
 
 		await git.clone({
 			fs: fse,
@@ -154,11 +154,11 @@ export default class AppRepository {
 		const parsedManifestsPromises = appManifests.map((manifest) =>
 			readYaml(manifest)
 				.catch((error) => {
-					this.logger.error(`Manifest parsing of ${manifest} failed`, error)
+					this.logger.error(`Manifest parsing of ${manifest} failed: ${error.reason} on line ${error.mark.line}`)
 				})
 				.then(validateManifest)
 				.catch((error) => {
-					this.logger.error(`Manifest validation of ${manifest} failed`, error)
+					this.logger.error(`Manifest validation of ${manifest} failed: ${error.message}`)
 				}),
 		)
 

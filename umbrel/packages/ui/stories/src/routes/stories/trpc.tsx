@@ -5,16 +5,16 @@ import {Link} from 'react-router-dom'
 
 import {Loading} from '@/components/ui/loading'
 import {EnsureLoggedIn} from '@/modules/auth/ensure-logged-in'
-import {RouterOutput, trpcHttpUrl, trpcReact} from '@/trpc/trpc'
+import {RouterOutput, trpcReact, trpcUrl} from '@/trpc/trpc'
 import {pathJoin} from '@/utils/misc'
 
-const trpcEndpointUrl = pathJoin(trpcHttpUrl, 'system.status')
+const trpcEndpointUrl = pathJoin(trpcUrl, 'system.status')
 
 export default function Trpc() {
 	return (
 		<EnsureLoggedIn>
 			<div>
-				<JSONTree data={{trpcHttpUrl, trpcEndpointUrl}} />
+				<JSONTree data={{trpcUrl, trpcEndpointUrl}} />
 				<Link to={trpcEndpointUrl} className='underline'>
 					Link to test DEBUG result
 				</Link>
@@ -54,15 +54,15 @@ function NormalUseQueryExample2() {
 }
 
 function ContextExample() {
-	const utils = trpcReact.useUtils()
+	const ctx = trpcReact.useContext()
 	const [data, setData] = useState<RouterOutput['user']['get'] | null>(null)
 
 	useEffect(() => {
-		utils.user.get.fetch().then((res) => {
+		ctx.user.get.fetch().then((res) => {
 			console.log(res)
 			setData(res)
 		})
-	}, [utils.user.get])
+	}, [ctx.user.get])
 
 	return <JSONTree data={data} />
 }

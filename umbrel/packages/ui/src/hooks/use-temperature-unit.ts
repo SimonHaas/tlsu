@@ -17,11 +17,11 @@ export const temperatureDescriptionsKeyed = keyBy(temperatureDescriptions, 'id')
 export function useTemperatureUnit(
 	optionalUnit?: TemperatureUnit,
 ): [unit: TemperatureUnit, setTemp: (unit: TemperatureUnit) => void] {
-	const utils = trpcReact.useUtils()
+	const ctx = trpcReact.useContext()
 	const userGetQ = trpcReact.user.get.useQuery()
 	const userSetMut = trpcReact.user.set.useMutation({
 		onSuccess() {
-			utils.user.get.invalidate()
+			ctx.user.get.invalidate()
 		},
 	})
 

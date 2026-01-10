@@ -8,18 +8,16 @@ type MiddlewareOptions = {
 }
 
 export const isAuthenticated = async ({ctx, next}: MiddlewareOptions) => {
-	if (ctx.dangerouslyBypassAuthentication === true) return next()
-
-	// Bypass authentication for websocket requests since auth is handled
-	// on connection by express.
-	if (ctx.transport === 'ws') return next()
+	if (ctx.dangerouslyBypassAuthentication === true) {
+		return next()
+	}
 
 	try {
-		const token = ctx.request?.headers.authorization?.split(' ')[1]
+		const token = ctx.request.headers.authorization?.split(' ')[1]
 		if (token === undefined) throw new Error('Missing token')
 		await ctx.server.verifyToken(token)
 	} catch (error) {
-		ctx.logger.error('Failed to verify token', error)
+		ctx.logger.error((error as Error).message)
 		throw new TRPCError({code: 'UNAUTHORIZED', message: 'Invalid token'})
 	}
 

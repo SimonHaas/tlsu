@@ -1,72 +1,26 @@
-import {
-	createTRPCClient,
-	createTRPCReact,
-	createWSClient,
-	httpLink,
-	loggerLink,
-	splitLink,
-	TRPCClientErrorLike,
-	wsLink,
-} from '@trpc/react-query'
+import {createTRPCProxyClient, createTRPCReact, httpLink, loggerLink, TRPCClientErrorLike} from '@trpc/react-query'
 import {inferRouterInputs, inferRouterOutputs} from '@trpc/server'
 
 import {JWT_LOCAL_STORAGE_KEY} from '@/modules/auth/shared'
 import {IS_DEV} from '@/utils/misc'
 
-import {httpOnlyPaths, type AppRouter} from '../../../umbreld/source/modules/server/trpc/common'
+import type {AppRouter} from '../../../../packages/umbreld/source/modules/server/trpc/index'
 
-const {protocol, hostname, port} = location
-
-// do not pass colon when port is empty
-const portPart = port ? `:${port}` : ''
-const httpOrigin = `${protocol}//${hostname}${portPart}`
-
-// Some browsers now allow http(s):// schemes to be used in the websocket constructor and will silently rewrite to ws(s)://
-// but there are still some browsers, and older versions of now-compatible browsers, that will not do this:
-// https://caniuse.com/mdn-api_websocket_websocket_url_parameter_http_https_relative
-// So we explicitly build the websocket url with the correct scheme to maintain compatibility
-export const trpcHttpUrl = `${httpOrigin}/trpc`
-const wsProtocol = protocol === 'https:' ? 'wss:' : 'ws:'
-const trpcWsUrl = `${wsProtocol}//${hostname}${portPart}/trpc`
+export const trpcUrl = `http://${location.hostname}:${location.port}/trpc`
 
 // TODO: Getting jwt from `localStorage` like this means auth flow require a page refresh
-const getJwt = () => localStorage.getItem(JWT_LOCAL_STORAGE_KEY)
-
-const wsClient = createWSClient({
-	url: () => {
-		const token = getJwt()
-		return token ? `${trpcWsUrl}?token=${token}` : `${trpcWsUrl}`
-	},
-})
-
 export const links = [
 	loggerLink({
 		enabled: () => IS_DEV,
 	}),
-	// Split 1: subscriptions vs everything else
-	// httpLink is request/response only and cannot carry subscriptions, so we
-	// route ALL subscription operations to WebSocket unconditionally (e.g. `eventBus.listen(files:operation-progress)`)
-	splitLink({
-		condition: (op) => op.type === 'subscription',
-		true: wsLink({client: wsClient}),
-		// Split 2: HTTP vs WebSocket for queries/mutations
-		// We route over HTTP when there is no JWT (public/onboarding, no WS auth yet) or the procedure is in `httpOnlyPaths` (needs request/response semantics like cookies/headers)
-		// Otherwise we use WebSocket
-		false: splitLink({
-			condition: (operation) => {
-				const noToken = !getJwt()
-				const isHttpOnlyPath = httpOnlyPaths.includes(operation.path as (typeof httpOnlyPaths)[number])
-				return noToken || isHttpOnlyPath
-			},
-			true: httpLink({
-				url: trpcHttpUrl,
-				headers: () => {
-					const token = getJwt()
-					return token ? {Authorization: `Bearer ${token}`} : {}
-				},
-			}),
-			false: wsLink({client: wsClient}),
-		}),
+	httpLink({
+		url: trpcUrl,
+		headers: async () => {
+			const jwt = localStorage.getItem(JWT_LOCAL_STORAGE_KEY)
+			return {
+				Authorization: `Bearer ${jwt}`,
+			}
+		},
 	}),
 ]
 
@@ -75,7 +29,7 @@ export const trpcReact = createTRPCReact<AppRouter>()
 
 // Vanilla client
 /** Use sparingly */
-export const trpcClient = createTRPCClient<AppRouter>({links})
+export const trpcClient = createTRPCProxyClient<AppRouter>({links})
 
 // Types ----------------------------
 

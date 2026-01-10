@@ -24,11 +24,6 @@ const PopoverContent = React.forwardRef<
 			sideOffset={sideOffset}
 			className={cn(contextMenuClasses.content, className)}
 			{...props}
-			// Prevent right-clicks within content from triggering parent context menus
-			onContextMenu={(e) => {
-				e.preventDefault() // Prevent default browser context menu
-				e.stopPropagation()
-			}}
 		/>
 	</PopoverPrimitive.Portal>
 ))

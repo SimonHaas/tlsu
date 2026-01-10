@@ -2,7 +2,6 @@ import tailwindContainerQueries from '@tailwindcss/container-queries'
 import tailwindTypography from '@tailwindcss/typography'
 import {mapValues} from 'remeda'
 import tailwindCssAnimate from 'tailwindcss-animate'
-import tailwindRadix from 'tailwindcss-radix'
 import defaultTheme from 'tailwindcss/defaultTheme'
 import {PluginAPI} from 'tailwindcss/types/config'
 
@@ -20,7 +19,6 @@ export default {
 		fontFamily: {
 			sans: ['var(--font-inter)', ...defaultTheme.fontFamily.sans],
 			mono: ['Roboto', ...defaultTheme.fontFamily.mono],
-			sticker: ['"Permanent Marker"', 'cursive'],
 		},
 		container: {
 			center: true,
@@ -199,13 +197,7 @@ export default {
 			}),
 		},
 	},
-	plugins: [
-		tailwindCssAnimate,
-		tailwindContainerQueries,
-		tailwindTypography,
-		utilPlugin,
-		tailwindRadix({variantPrefix: 'radix'}),
-	],
+	plugins: [tailwindCssAnimate, tailwindContainerQueries, tailwindTypography, utilPlugin],
 }
 
 function utilPlugin(plugin: PluginAPI) {

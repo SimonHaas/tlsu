@@ -3,7 +3,6 @@ import {createPortal} from 'react-dom'
 
 import {FilesDndOverlay} from '@/features/files/components/files-dnd-wrapper/files-dnd-overlay'
 import {useDragAndDrop} from '@/features/files/hooks/use-drag-and-drop'
-import {useIsFilesReadOnly} from '@/features/files/providers/files-capabilities-context'
 
 // From: https://github.com/clauderic/dnd-kit/pull/334#issuecomment-1965708784
 const fixCursorSnapOffset: CollisionDetection = (args) => {
@@ -30,7 +29,6 @@ const fixCursorSnapOffset: CollisionDetection = (args) => {
 }
 
 export function FilesDndWrapper({children}: {children: React.ReactNode}) {
-	const isReadOnly = useIsFilesReadOnly()
 	// By adding a 8px distance, we disable the drag and drop registeration
 	// on single/double clicks.
 	const sensors = useSensors(
@@ -43,9 +41,7 @@ export function FilesDndWrapper({children}: {children: React.ReactNode}) {
 
 	const {handleDragStart, handleDragEnd} = useDragAndDrop()
 
-	return isReadOnly ? (
-		<>{children}</>
-	) : (
+	return (
 		<DndContext
 			sensors={sensors}
 			onDragStart={handleDragStart}

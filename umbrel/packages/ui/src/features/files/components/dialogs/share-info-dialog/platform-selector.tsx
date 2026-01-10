@@ -3,7 +3,6 @@ import {ChevronDown} from 'lucide-react'
 import iOsIcon from '@/features/files/assets/sharing-info-platforms/ios.png'
 import macOsIcon from '@/features/files/assets/sharing-info-platforms/macos.png'
 import windowsIcon from '@/features/files/assets/sharing-info-platforms/windows.png'
-import umbrelDeviceIconActive from '@/features/files/assets/umbrel-device-icon-active.png'
 import {Button} from '@/shadcn-components/ui/button'
 import {
 	DropdownMenu,
@@ -14,7 +13,7 @@ import {
 import {t} from '@/utils/i18n'
 
 export type Platform = {
-	id: 'macos' | 'ios' | 'windows' | 'umbrelos'
+	id: 'macos' | 'ios' | 'windows'
 	name: string
 	icon: string
 }
@@ -23,7 +22,6 @@ export const platforms: Platform[] = [
 	{id: 'macos', name: 'macOS', icon: macOsIcon},
 	{id: 'windows', name: 'Windows', icon: windowsIcon},
 	{id: 'ios', name: 'iOS', icon: iOsIcon},
-	{id: 'umbrelos', name: 'Another Umbrel', icon: umbrelDeviceIconActive},
 ]
 
 interface PlatformSelectorProps {

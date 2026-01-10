@@ -24,7 +24,6 @@ export function usePager({apps, widgets}: PageT): {
 	pages: PageT[]
 	pageInnerRef: Ref<HTMLDivElement>
 	appsPerRow: number
-	hasMeasurement: boolean
 } {
 	// Using breakpoint instead of measure because max inner page width comes from breakpoint
 	const breakpoint = useBreakpoint()
@@ -147,9 +146,8 @@ export function usePager({apps, widgets}: PageT): {
 			pageInnerRef,
 			pages: [{widgets: [], apps: []}],
 			appsPerRow: 0,
-			hasMeasurement: pageH > 0 && pageW > 0,
 		}
 	}
 
-	return {pageInnerRef, pages, appsPerRow, hasMeasurement: true}
+	return {pageInnerRef, pages, appsPerRow}
 }

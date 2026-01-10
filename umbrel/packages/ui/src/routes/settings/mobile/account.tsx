@@ -19,7 +19,8 @@ import {AnimatedInputError, Input, Labeled, PasswordInput} from '@/shadcn-compon
 import {t} from '@/utils/i18n'
 
 export function AccountDrawer() {
-	const title = t('account')
+	// TODO: add translation
+	const title = 'Account'
 
 	const dialogProps = useSettingsDialogProps()
 	const closeDialog = () => dialogProps.onOpenChange(false)
@@ -65,13 +66,12 @@ function ChangeName({closeDialog}: {closeDialog: () => void}) {
 				<div className='flex-1' />
 				<DrawerFooter>
 					<Button type='button' size='dialog' onClick={closeDialog}>
-						{t('cancel')}
+						Cancel
 					</Button>
 					<Button type='submit' size='dialog' variant='primary'>
-						{t('confirm')}
+						Save changes
 					</Button>
 				</DrawerFooter>
-				<div className='' />
 			</fieldset>
 		</form>
 	)

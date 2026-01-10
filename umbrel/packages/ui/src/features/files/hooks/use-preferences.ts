@@ -1,13 +1,11 @@
-import {keepPreviousData} from '@tanstack/react-query'
-
-import {ViewPreferences} from '@/features/files/types'
-import {RouterInput, trpcReact} from '@/trpc/trpc'
+import {Preferences} from '@/features/files/types'
+import {RouterError, RouterInput, trpcReact} from '@/trpc/trpc'
 
 /**
  * Hook to list favorite directories in the file system.
  */
 export function usePreferences() {
-	const utils = trpcReact.useUtils()
+	const utils = trpcReact.useContext()
 
 	// Query to fetch favorites
 	const {
@@ -15,46 +13,48 @@ export function usePreferences() {
 		isLoading,
 		isError,
 		error,
-	} = trpcReact.files.viewPreferences.useQuery(undefined, {
-		placeholderData: keepPreviousData,
+	} = trpcReact.files.preferences.useQuery(undefined, {
+		keepPreviousData: true,
+		onError: (error: RouterError) => {
+			console.error('Failed to fetch preferences:', error)
+		},
 	})
 
-	const setPreferences = trpcReact.files.updateViewPreferences.useMutation({
-		onMutate: async (newPreferences: RouterInput['files']['updateViewPreferences']) => {
+	const setPreferences = trpcReact.files.setPreferences.useMutation({
+		onMutate: async (newPreferences: RouterInput['files']['setPreferences']) => {
 			// cancel any outgoing refetches (so they don't overwrite our optimistic update)
-			await utils.files.viewPreferences.cancel()
+			await utils.files.preferences.cancel()
 
 			// snapshot the previous preferences
-			const oldPreferences = utils.files.viewPreferences.getData()
+			const oldPreferences = utils.files.preferences.getData()
 
 			// optimistically update to the new value
-			utils.files.viewPreferences.setData(undefined, () => ({
+			utils.files.preferences.setData(undefined, () => ({
 				view: oldPreferences?.view ?? 'list',
 				sortBy: oldPreferences?.sortBy ?? 'name',
-				sortOrder: oldPreferences?.sortOrder ?? 'ascending',
+				sortOrder: oldPreferences?.sortOrder ?? 'asc',
 				...newPreferences,
 			}))
 		},
 		onSettled: () => {
 			// we don't need to revert the optimistic update on error
 			// because it will be reverted by the invalidation
-			utils.files.viewPreferences.invalidate()
+			utils.files.preferences.invalidate()
 		},
 	})
 
-	const setView = (view: ViewPreferences['view']) => {
+	const setView = (view: Preferences['view']) => {
 		setPreferences.mutate({...preferences, view})
 	}
 
-	const setSortBy = (sortBy: ViewPreferences['sortBy']) => {
+	const setSortBy = (sortBy: Preferences['sortBy']) => {
 		// if the same column is clicked again, toggle the sort order
 		if (preferences?.sortBy === sortBy) {
-			const newSortOrder: ViewPreferences['sortOrder'] =
-				preferences?.sortOrder === 'ascending' ? 'descending' : 'ascending'
+			const newSortOrder: Preferences['sortOrder'] = preferences.sortOrder === 'asc' ? 'desc' : 'asc'
 			return setPreferences.mutate({...preferences, sortOrder: newSortOrder})
 		}
 		// otherwise, set to ascending for name, and descending for other columns
-		const defaultSortOrder: ViewPreferences['sortOrder'] = sortBy === 'name' ? 'ascending' : 'descending'
+		const defaultSortOrder: Preferences['sortOrder'] = sortBy === 'name' ? 'asc' : 'desc'
 		return setPreferences.mutate({...preferences, sortBy: sortBy, sortOrder: defaultSortOrder})
 	}
 

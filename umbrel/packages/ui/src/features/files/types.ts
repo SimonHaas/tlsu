@@ -3,15 +3,16 @@ import type {RouterOutput} from '@/trpc/trpc'
 // ---------------------------- umbreld (server) Types ----------------------------
 
 // ensure that the types are the same for files.list and files.recents
-export type UmbreldFileSystemItem = RouterOutput['files']['list']['files'][number]
+export type UmbreldFileSystemItem =
+	RouterOutput['files']['list']['items'][number] extends RouterOutput['files']['recents'][number]
+		? RouterOutput['files']['list']['items'][number]
+		: never
 
 export type Favorite = RouterOutput['files']['favorites'][number]
 
 export type Share = RouterOutput['files']['shares'][number]
 
-export type ExternalStorageDevice = RouterOutput['files']['externalDevices'][number]
-
-export type ViewPreferences = RouterOutput['files']['viewPreferences']
+export type Preferences = RouterOutput['files']['preferences']
 
 // ---------------------------- Client Types ----------------------------
 

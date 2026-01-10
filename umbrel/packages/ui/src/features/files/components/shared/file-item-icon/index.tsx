@@ -1,18 +1,12 @@
-import React, {useEffect, useState} from 'react'
+import React from 'react'
 import {BsTrash2} from 'react-icons/bs'
 import {IoPlay} from 'react-icons/io5'
 
-import backupsIcon from '@/features/backups/assets/backups-icon.png'
 import {AppsIcon} from '@/features/files/assets/apps-icon'
-import externalStorageIcon from '@/features/files/assets/external-storage-icon.png'
+import {ExternalStorageIcon} from '@/features/files/assets/external-storage-icon'
 import {HomeIcon} from '@/features/files/assets/home-icon'
-import activeNasIcon from '@/features/files/assets/nas-icon-active.png'
-import nasIconInactive from '@/features/files/assets/nas-icon-inactive.png'
-import networkIcon from '@/features/files/assets/network-icon.png'
 import {RecentsIcon} from '@/features/files/assets/recents-icon'
 import {SharedFolderBadge} from '@/features/files/assets/shared-folder-badge'
-import umbrelDeviceActive from '@/features/files/assets/umbrel-device-icon-active.png'
-import umbrelDeviceInactive from '@/features/files/assets/umbrel-device-icon-inactive.png'
 import {AnimatedFolderIcon} from '@/features/files/components/shared/file-item-icon/animated-folder-icon'
 import {
 	DocumentsIcon,
@@ -24,7 +18,6 @@ import {FolderIcon as SimpleFolderIcon} from '@/features/files/components/shared
 import {UnknownFileThumbnail} from '@/features/files/components/shared/file-item-icon/unknown-file-thumbnail'
 import {
 	APPS_PATH,
-	BACKUPS_PATH,
 	FILE_TYPE_MAP,
 	HOME_PATH,
 	IMAGE_EXTENSIONS_WITH_IMAGE_THUMBNAILS,
@@ -32,15 +25,10 @@ import {
 	TRASH_PATH,
 	VIDEO_EXTENSIONS_WITH_IMAGE_THUMBNAILS,
 } from '@/features/files/constants'
-import {useNetworkDeviceType} from '@/features/files/hooks/use-network-device-type'
-import {useNetworkStorage} from '@/features/files/hooks/use-network-storage'
 import {useShares} from '@/features/files/hooks/use-shares'
 import type {FileSystemItem} from '@/features/files/types'
 import {splitFileName} from '@/features/files/utils/format-filesystem-name'
-import {isDirectoryANetworkDevice} from '@/features/files/utils/is-directory-a-network-device-or-share'
 import {isDirectoryAnExternalDrivePartition} from '@/features/files/utils/is-directory-an-external-drive-partition'
-import {trpcReact} from '@/trpc/trpc'
-import {t} from '@/utils/i18n'
 
 interface FileItemIcon {
 	item: FileSystemItem
@@ -54,54 +42,19 @@ export const FileItemIcon = ({item, onlySVG, className, useAnimatedIcon = false,
 	const {isPathShared} = useShares()
 	const isShared = isPathShared(item.path)
 
-	// Check if this is an app folder in either normal mode or rewind mode
-	// Normal: /Apps/bitcoin
-	// Rewind: /Backups/some-mount-dir/Apps/bitcoin
-	const isAppFolder = (() => {
-		// Match normal app path: /Apps/appId (but not /Apps/appId/data)
-		if (item.path.startsWith(APPS_PATH)) {
-			return item.path.slice(APPS_PATH.length).split('/').length === 2
-		}
-
-		// Match rewind app path: /Backups/xxx/Apps/appId (but not /Backups/xxx/Apps/appId/data)
-		if (item.path.startsWith(BACKUPS_PATH)) {
-			// Example: /Backups/2025-10-29T20:32:32.710Z/Apps/transmission
-			// Split: ['', 'Backups', '2025-10-29T20:32:32.710Z', 'Apps', 'transmission']
-			const parts = item.path.split('/')
-			// Check: parts[0] === '', parts[1] === 'Backups', parts[3] === 'Apps', parts[4] === appId, parts[5] === undefined
-			return parts.length === 5 && parts[1] === 'Backups' && parts[3] === 'Apps'
-		}
-
-		return false
-	})()
+	const isAppFolder =
+		item.path.startsWith(APPS_PATH) &&
+		// check if it's not a nested app directory, eg. we want to return true for /Apps/bitcoin but false for /Apps/bitcoin/data
+		item.path.slice(APPS_PATH.length).split('/').length === 2
 
 	// External storage icon if the user directly navigates to umbrel.local/files/External
 	if (item.type === 'directory' && isDirectoryAnExternalDrivePartition(item.path)) {
-		return <img src={externalStorageIcon} alt={t('external-drive')} className={className} draggable={false} />
-	}
-
-	// Network share icon when browsing /Network
-	if (item.type === 'directory' && isDirectoryANetworkDevice(item.path)) {
-		return <NetworkDeviceIcon path={item.path} className={className} />
-	}
-
-	if (item.type === 'directory' && item.name === 'Umbrel Backup.backup') {
-		return <img src={backupsIcon} alt='Umbrel Backup' className={className} draggable={false} />
+		return <ExternalStorageIcon className={className} />
 	}
 
 	// External storage for sidebar and pathbar
 	if (item.type === 'external-storage') {
-		return <img src={externalStorageIcon} alt={t('external-drive')} className={className} draggable={false} />
-	}
-
-	// Network root for sidebar and pathbar
-	if (item.type === 'network-root') {
-		return <img src={networkIcon} alt='Network' className={className + 'w-auto'} draggable={false} />
-	}
-
-	// Network share for sidebar and pathbar
-	if (item.type === 'network-share') {
-		return <NetworkDeviceIcon path={item.path} className={className} />
+		return <ExternalStorageIcon className={className} />
 	}
 
 	// Folder
@@ -113,12 +66,12 @@ export const FileItemIcon = ({item, onlySVG, className, useAnimatedIcon = false,
 		return (
 			<div className='relative'>
 				<FolderIcon className={className} path={item.path} useAnimatedIcon={useAnimatedIcon} isHovered={isHovered} />
-				{isAppFolder ? <AppFolderBottomIcon appId={extractAppIdFromPath(item.path)} /> : null}
+				{isAppFolder ? <AppFolderBottomIcon appId={item.path.split(APPS_PATH).pop() || ''} /> : null}
 
 				{/* we add it here because only folders can be shared */}
 				{isShared ? (
-					<div className='absolute left-0 top-0 flex size-1/2 max-h-8 min-h-[0.9rem] min-w-[0.9rem] max-w-8 translate-x-[-30%] translate-y-[-20%] items-center justify-center rounded-full border border-white/15 bg-gradient-to-b from-brand to-[color-mix(in_srgb,hsl(var(--color-brand))_80%,black_20%)] shadow-md'>
-						<SharedFolderBadge className='size-4/5' />
+					<div className='absolute left-0 top-0 flex h-1/2 max-h-8 min-h-[0.9rem] w-1/2 min-w-[0.9rem] max-w-8 translate-x-[-30%] translate-y-[-20%] items-center justify-center rounded-full border border-white/15 bg-gradient-to-b from-brand to-[color-mix(in_srgb,hsl(var(--color-brand))_80%,black_20%)] shadow-md'>
+						<SharedFolderBadge className='h-[80%] w-[80%]' />
 					</div>
 				) : null}
 			</div>
@@ -135,7 +88,7 @@ export const FileItemIcon = ({item, onlySVG, className, useAnimatedIcon = false,
 	}
 
 	// Get the thumbnail component
-	const Thumbnail = FILE_TYPE_MAP[item.type as keyof typeof FILE_TYPE_MAP].thumbnail as unknown as React.ComponentType<{
+	const Thumbnail = FILE_TYPE_MAP[item.type as keyof typeof FILE_TYPE_MAP].thumbnail as React.ComponentType<{
 		className?: string
 	}>
 
@@ -181,43 +134,23 @@ const FolderIcon = ({
 	const FolderComponent = useAnimatedIcon ? AnimatedFolderIcon : SimpleFolderIcon
 
 	if (path === `${HOME_PATH}/Videos`) {
-		return useAnimatedIcon ? (
-			<FolderComponent className={className} overlayIcon={VideosIcon} isHovered={isHovered} />
-		) : (
-			<FolderComponent className={className} overlayIcon={VideosIcon} />
-		)
+		return <FolderComponent className={className} overlayIcon={VideosIcon} isHovered={isHovered} />
 	}
 	if (path === `${HOME_PATH}/Downloads`) {
-		return useAnimatedIcon ? (
-			<FolderComponent className={className} overlayIcon={DownloadsIcon} isHovered={isHovered} />
-		) : (
-			<FolderComponent className={className} overlayIcon={DownloadsIcon} />
-		)
+		return <FolderComponent className={className} overlayIcon={DownloadsIcon} isHovered={isHovered} />
 	}
 	if (path === `${HOME_PATH}/Documents`) {
-		return useAnimatedIcon ? (
-			<FolderComponent className={className} overlayIcon={DocumentsIcon} isHovered={isHovered} />
-		) : (
-			<FolderComponent className={className} overlayIcon={DocumentsIcon} />
-		)
+		return <FolderComponent className={className} overlayIcon={DocumentsIcon} isHovered={isHovered} />
 	}
 	if (path === `${HOME_PATH}/Photos`) {
-		return useAnimatedIcon ? (
-			<FolderComponent className={className} overlayIcon={PhotosIcon} isHovered={isHovered} />
-		) : (
-			<FolderComponent className={className} overlayIcon={PhotosIcon} />
-		)
+		return <FolderComponent className={className} overlayIcon={PhotosIcon} isHovered={isHovered} />
 	}
-	return useAnimatedIcon ? (
-		<FolderComponent className={className} isHovered={isHovered} />
-	) : (
-		<FolderComponent className={className} />
-	)
+	return <FolderComponent className={className} isHovered={isHovered} />
 }
 
 const AppFolderBottomIcon = ({appId}: {appId: string}) => {
-	const [error, setError] = useState(false)
-	const [loaded, setLoaded] = useState(false)
+	const [error, setError] = React.useState(false)
+	const [loaded, setLoaded] = React.useState(false)
 
 	return (
 		<img
@@ -232,140 +165,57 @@ const AppFolderBottomIcon = ({appId}: {appId: string}) => {
 	)
 }
 
-// Thumbnail component with on‑demand fetch
-function useOnDemandThumbnail(item: FileSystemItem) {
-	const [url, setUrl] = useState<string | undefined>(item.thumbnail)
-
-	const getThumbnailMutation = trpcReact.files.getThumbnail.useMutation()
-
-	// Reset state when the file item changes
-	useEffect(() => {
-		setUrl(item.thumbnail)
-	}, [item.path, item.thumbnail])
-
-	useEffect(() => {
-		if (url !== undefined) return
-
-		getThumbnailMutation.mutateAsync({path: item.path}).then((res) => {
-			if (res) {
-				setUrl(res)
-			}
-		})
-	}, [url, item.path])
-
-	return {thumbnailUrl: url}
-}
-
-const Thumbnail = ({
+const ImageThumbnail = ({
 	item,
 	fallback: Fallback,
 	className,
-	overlay,
 }: {
 	item: FileSystemItem
 	fallback: React.ComponentType<{className?: string}>
 	className?: string
-	overlay?: React.ReactNode
 }) => {
-	const {thumbnailUrl} = useOnDemandThumbnail(item)
+	const [error, setError] = React.useState(false)
 
-	// Track if the image failed to load so we can gracefully fall back to the
-	// default thumbnail component
-	const [hadError, setHadError] = useState(false)
-
-	// Reset the error flag whenever the thumbnail url or file changes
-	useEffect(() => {
-		setHadError(false)
-	}, [thumbnailUrl, item.path])
-
-	const imageNode =
-		thumbnailUrl && !hadError ? (
-			<img
-				src={thumbnailUrl}
-				alt={item.name}
-				onError={() => setHadError(true)}
-				className={`rounded-sm object-contain ${className || ''}`}
-			/>
-		) : null
-
-	const content = imageNode ?? <Fallback className={className} />
-
-	// Only display overlay when we have a real thumbnail to show
-	if (overlay && imageNode) {
-		return (
-			<div className='relative'>
-				{imageNode}
-				{overlay}
-			</div>
-		)
+	if (error) {
+		return <Fallback className={className} />
 	}
 
-	return content
+	return (
+		<img
+			src={`/api/files/thumbnail?path=${encodeURIComponent(item.path)}`}
+			alt={item.name}
+			onError={() => setError(true)}
+			className={`rounded-sm object-contain ${className || ''}`}
+		/>
+	)
 }
 
-// Image thumbnail
-const ImageThumbnail = (props: {
-	item: FileSystemItem
-	fallback: React.ComponentType<{className?: string}>
-	className?: string
-}) => <Thumbnail {...props} />
-
-// Video thumbnail
 const VideoThumbnail = ({
 	item,
-	fallback,
+	fallback: Fallback,
 	className,
 }: {
 	item: FileSystemItem
 	fallback: React.ComponentType<{className?: string}>
 	className?: string
-}) => (
-	<Thumbnail
-		item={item}
-		fallback={fallback}
-		className={className}
-		overlay={
+}) => {
+	const [error, setError] = React.useState(false)
+
+	if (error) {
+		return <Fallback className={className} />
+	}
+
+	return (
+		<div className='relative'>
+			<img
+				src={`/api/files/thumbnail?path=${encodeURIComponent(item.path)}`}
+				alt={item.name}
+				onError={() => setError(true)}
+				className={`rounded-sm object-contain ${className || ''}`}
+			/>
 			<div className='absolute left-1/2 top-1/2 flex h-full w-full -translate-x-1/2 -translate-y-1/2 items-center justify-center'>
 				<IoPlay className='h-1/3 w-1/3 text-white shadow-md' />
 			</div>
-		}
-	/>
-)
-
-// Component to render network device icon with Umbrel detection
-const NetworkDeviceIcon = ({path, className}: {path: string; className?: string}) => {
-	const {doesHostHaveMountedShares} = useNetworkStorage()
-	const {deviceType, isLoading} = useNetworkDeviceType(path)
-
-	const isMounted = doesHostHaveMountedShares(path)
-
-	// While detecting, show generic NAS icon
-	if (isLoading) {
-		return (
-			<img src={isMounted ? activeNasIcon : nasIconInactive} alt='Network' className={className} draggable={false} />
-		)
-	}
-
-	// Show appropriate icon based on device type and mount status
-	if (deviceType === 'umbrel') {
-		return (
-			<img
-				src={isMounted ? umbrelDeviceActive : umbrelDeviceInactive}
-				alt='Umbrel'
-				className={className}
-				draggable={false}
-			/>
-		)
-	}
-
-	// Default to generic NAS icon
-	return <img src={isMounted ? activeNasIcon : nasIconInactive} alt='NAS' className={className} draggable={false} />
-}
-
-// Helper function to extract app ID from both normal and rewind paths
-function extractAppIdFromPath(path: string): string {
-	// For /Apps/bitcoin or /Backups/xxx/Apps/bitcoin, extract "bitcoin"
-	const pattern = new RegExp(`${APPS_PATH}/([^/]+)`)
-	const match = path.match(pattern)
-	return match?.[1] || ''
+		</div>
+	)
 }

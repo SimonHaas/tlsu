@@ -1,5 +1,3 @@
-import {useEffect} from 'react'
-
 import {BareCoverMessage} from '@/components/ui/cover-message'
 import {Loading} from '@/components/ui/loading'
 import {toast} from '@/components/ui/toast'
@@ -36,15 +34,10 @@ function EnsureUser({
 }) {
 	const userExistsQ = trpcReact.user.exists.useQuery(undefined, {
 		retry: false,
-	})
-
-	// Show toast on error
-	useEffect(() => {
-		if (userExistsQ.isError) {
+		onError() {
 			toast.error(t('auth.failed-to-check-if-user-exists'))
-		}
-	}, [userExistsQ.isError])
-
+		},
+	})
 	const userExists = userExistsQ.data ?? false
 	const wantsUserExists = exists
 

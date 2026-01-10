@@ -10,7 +10,7 @@ concurrency:
 
 jobs:
   update-translations:
-    timeout-minutes: 10
+    timeout-minutes: 3
     permissions:
       contents: write
     runs-on: ubuntu-22.04
@@ -25,13 +25,6 @@ jobs:
 
     - name: Checkout code
       uses: actions/checkout@v4
-      with:
-        fetch-depth: 0  # Fetch full history for git comparisons
-        ref: ${{ github.head_ref }} # Check out the PR's head branch
-
-    - name: Fetch base branch
-      run: |
-        git fetch origin ${{ github.base_ref }}:${{ github.base_ref }}
 
     - name: Setup node
       uses: actions/setup-node@v4
@@ -50,8 +43,6 @@ jobs:
 
     - name: Update translations
       env:
-        CI: 'true'
-        GITHUB_BASE_REF: ${{ github.base_ref }}
         TRANSLATIONS_OPENAI_API_KEY: ${{ secrets.TRANSLATIONS_OPENAI_API_KEY }}
         TRANSLATIONS_OPENAI_MODEL: ${{ secrets.TRANSLATIONS_OPENAI_MODEL }}
         TRANSLATIONS_SYSTEM_PROMPT: ${{ secrets.TRANSLATIONS_SYSTEM_PROMPT }}

@@ -1,7 +1,3 @@
-import {keepPreviousData} from '@tanstack/react-query'
-import {useCallback, useEffect, useMemo, useRef, useState} from 'react'
-
-import {USE_LIST_DIRECTORY_LOAD_ITEMS} from '@/features/files/constants'
 import {usePreferences} from '@/features/files/hooks/use-preferences'
 import type {FileSystemItem} from '@/features/files/types'
 import {sortFilesystemItems} from '@/features/files/utils/sort-filesystem-items'
@@ -9,141 +5,65 @@ import {useGlobalFiles} from '@/providers/global-files'
 import {trpcReact} from '@/trpc/trpc'
 
 interface UseListDirectoryOptions {
-	itemsOnScrollEnd?: number
-	initialItems?: number
+	start?: number
+	count?: number
 }
 
-export function useListDirectory(
-	path: string,
-	{
-		itemsOnScrollEnd = USE_LIST_DIRECTORY_LOAD_ITEMS.ON_SCROLL_END,
-		initialItems = USE_LIST_DIRECTORY_LOAD_ITEMS.INITIAL,
-	}: UseListDirectoryOptions = {},
-) {
+/**
+ * Hook to fetch the contents of a directory with optional pagination and sorting
+ *
+ * @param path - Absolute path of the directory to list
+ * @param options - Optional configuration for pagination and sorting
+ * @returns Object containing directory contents, loading state, and error information
+ */
+export function useListDirectory(path: string, {start = 0, count = 100}: UseListDirectoryOptions = {}) {
 	const {preferences} = usePreferences()
 	const {uploadingItems} = useGlobalFiles()
-	const utils = trpcReact.useUtils()
 
-	const sortBy = preferences?.sortBy ?? 'name'
-	const sortOrder = preferences?.sortOrder ?? 'ascending'
-
-	// Local “pagination” state
-	const [items, setItems] = useState<FileSystemItem[]>([])
-	const [hasMore, setHasMore] = useState(true)
-	const [isFetchingMore, setIsFetchingMore] = useState(false)
-	const [paginationError, setPaginationError] = useState<unknown>(null)
-	const [isLoadingItems, setIsLoadingItems] = useState(true)
-
-	// helpers to know WHEN to skip refetch on sort changes
-	const prevSortRef = useRef<{sortBy: string; sortOrder: string}>()
-	const fullyLoaded = items.length > 0 && !hasMore
-	const sortChanged =
-		prevSortRef.current && (prevSortRef.current.sortBy !== sortBy || prevSortRef.current.sortOrder !== sortOrder)
-
-	const skipBackendRequest = fullyLoaded && sortChanged
-
-	// remember latest sort
-	useEffect(() => {
-		prevSortRef.current = {sortBy, sortOrder}
-	}, [sortBy, sortOrder])
-
-	//
+	// Fetch the directory contents
 	const {data, isLoading, isError, error} = trpcReact.files.list.useQuery(
-		{path, limit: initialItems, sortBy, sortOrder},
 		{
-			enabled: !!path && !skipBackendRequest,
-			placeholderData: keepPreviousData,
+			path,
+			start,
+			count,
+			sortBy: preferences?.sortBy ?? 'name',
+			sortOrder: preferences?.sortOrder ?? 'asc',
+		},
+		{
+			enabled: Boolean(path),
+			keepPreviousData: true,
 			staleTime: 5_000,
-			// Don't retry on error. Backend errors like ENOENT/EIO/does-not-exist are deterministic, not transient.
-			// This gives us quick feedback to the user.
-			retry: false,
-			refetchOnWindowFocus: false,
+			onError: (error) => {
+				console.error(`Failed to fetch directory listing for '${path}':`, error)
+			},
 		},
 	)
 
-	// Reset items only when the *directory* changes
-	useEffect(() => {
-		// Using our own loading state instead of the query's isLoading/isFetching to prevent
-		// the empty view from briefly flashing when the items array is cleared during directory changes
-		setIsLoadingItems(true)
-		setItems([])
-		setHasMore(true)
-		setPaginationError(null)
-	}, [path])
+	// Add path to items - useful for keys and operations
+	let items: FileSystemItem[] = data?.items ?? []
 
-	// Seed items from the query result
-	useEffect(() => {
-		if (data?.files) {
-			setIsLoadingItems(false)
-			setItems(data.files)
-			setHasMore(data.hasMore)
-		}
-	}, [path, data])
+	// Find any uploading items for current directory
+	const uploadingItemsInCurrentDirectory = uploadingItems.filter((item) => {
+		const lastSlashIndex = item.path.lastIndexOf('/')
+		const itemDirectory = item.path.substring(0, lastSlashIndex)
+		return itemDirectory === path
+	})
 
-	// Stop loading if the query errors so the UI can render the error state
-	useEffect(() => {
-		if (isError) {
-			setIsLoadingItems(false)
-		}
-	}, [isError])
-
-	// Guard against late responses landing in the wrong directory
-	const requestIdRef = useRef(0)
-
-	const fetchMoreItems = useCallback(async (): Promise<boolean> => {
-		if (isLoading || isFetchingMore || !hasMore) return false
-
-		setIsFetchingMore(true)
-		setPaginationError(null)
-		const thisRequest = ++requestIdRef.current
-
-		const lastItem = items[items.length - 1]
-		const lastFileName = lastItem?.path.split('/').pop()
-
-		try {
-			const result = await utils.files.list.fetch({
-				path,
-				lastFile: lastFileName,
-				limit: itemsOnScrollEnd,
-				sortBy,
-				sortOrder,
-			})
-
-			// Ignore responses that belong to an outdated directory
-			if (thisRequest !== requestIdRef.current) return false
-
-			if (!result?.files?.length) {
-				setHasMore(false)
-				return false
-			}
-
-			// O( n ) dedupe
-			setItems((prev) => {
-				const map = new Map(prev.map((f) => [f.path, f]))
-				result.files.forEach((f: FileSystemItem) => map.set(f.path, f))
-				return Array.from(map.values())
-			})
-			setHasMore(result.hasMore)
-			return true
-		} catch (e) {
-			if (thisRequest === requestIdRef.current) setPaginationError(e)
-			return false
-		} finally {
-			if (thisRequest === requestIdRef.current) setIsFetchingMore(false)
-		}
-	}, [items, path, itemsOnScrollEnd, sortBy, sortOrder, isLoading, isFetchingMore, hasMore, utils.files.list])
-
-	// Merge optimistic uploading items & *always* sort locally
-	const directoryItems = useMemo(() => {
-		const optimistic = uploadingItems.filter((u) => u.path.substring(0, u.path.lastIndexOf('/')) === path)
-		return sortFilesystemItems([...optimistic, ...items], sortBy, sortOrder)
-	}, [uploadingItems, items, path, sortBy, sortOrder])
+	// Combine uploading items with directory items and sort them
+	if (uploadingItemsInCurrentDirectory.length > 0) {
+		items = [...uploadingItemsInCurrentDirectory, ...items]
+		items = sortFilesystemItems(items, preferences?.sortBy ?? 'name', preferences?.sortOrder ?? 'asc')
+	}
 
 	return {
-		listing: data ? {...data, items: directoryItems, hasMore} : undefined,
-		isLoading: isLoadingItems,
+		listing: data
+			? {
+					...data,
+					items: items,
+				}
+			: undefined,
+		isLoading,
 		isError,
 		error,
-		fetchMoreItems,
 	}
 }

@@ -1,4 +1,4 @@
-import {useEffect, useState} from 'react'
+import {useState} from 'react'
 import {RiAlertFill} from 'react-icons/ri'
 import {TbAlertTriangleFilled, TbArrowBadgeRight, TbLock, TbPower, TbUsb} from 'react-icons/tb'
 
@@ -77,22 +77,17 @@ function MigrateContent() {
 	const canMigrateQ = trpcReact.migration.canMigrate.useQuery(undefined, {
 		refetchOnWindowFocus: false,
 		enabled: state === 'check',
-	})
-
-	// Handle state update based on query result
-	useEffect(() => {
-		if (state !== 'check') return // Only run when checking
-
-		if (canMigrateQ.isSuccess) {
-			if (canMigrateQ.data) {
+		onSuccess: (canMigrate) => {
+			if (canMigrate) {
 				setState('ready')
 			} else {
 				setState('error')
 			}
-		} else if (canMigrateQ.isError) {
+		},
+		onError: () => {
 			setState('error')
-		}
-	}, [canMigrateQ.isSuccess, canMigrateQ.isError, canMigrateQ.data, state])
+		},
+	})
 
 	const retry = () => {
 		setState('check')

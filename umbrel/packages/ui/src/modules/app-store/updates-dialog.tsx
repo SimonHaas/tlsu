@@ -32,7 +32,7 @@ export function UpdatesDialogConnected() {
 			appsWithUpdates={appsWithUpdates}
 			titleRightChildren={
 				<Button
-					size='md'
+					size='dialog'
 					variant='primary'
 					onClick={updateAll.updateAll}
 					className='w-auto'
@@ -91,16 +91,16 @@ function AppItem({app}: {app: RegistryApp}) {
 		},
 	)
 	const [showAll, setShowAll] = useState(false)
-	const utils = trpcReact.useUtils()
+	const ctx = trpcReact.useContext()
 	const updateMut = trpcReact.apps.update.useMutation({
 		onMutate: () => {
 			// Optimistic updates because otherwise it's too slow and feels like nothing is happening
-			utils.apps.state.cancel()
-			utils.apps.state.setData({appId: app.id}, {state: 'updating', progress: 0})
+			ctx.apps.state.cancel()
+			ctx.apps.state.setData({appId: app.id}, {state: 'updating', progress: 0})
 		},
 		onSuccess: () => {
 			// This should cause the app to be removed from the list
-			utils.apps.list.invalidate()
+			ctx.apps.list.invalidate()
 		},
 	})
 	const updateApp = () => updateMut.mutate({appId: app.id})
@@ -121,7 +121,7 @@ function AppItem({app}: {app: RegistryApp}) {
 				<ProgressButton
 					size='sm'
 					onClick={updateApp}
-					disabled={inProgress || updateMut.isPending}
+					disabled={inProgress || updateMut.isLoading}
 					state={appState}
 					progress={progress}
 					style={{

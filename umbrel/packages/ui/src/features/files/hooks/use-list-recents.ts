@@ -1,7 +1,4 @@
-import {keepPreviousData} from '@tanstack/react-query'
-
 import {usePreferences} from '@/features/files/hooks/use-preferences'
-import type {FileSystemItem} from '@/features/files/types'
 import {sortFilesystemItems} from '@/features/files/utils/sort-filesystem-items'
 import {trpcReact} from '@/trpc/trpc'
 
@@ -13,8 +10,11 @@ import {trpcReact} from '@/trpc/trpc'
 export function useListRecents() {
 	// Fetch the directory contents
 	const {data, isLoading, isError, error} = trpcReact.files.recents.useQuery(undefined, {
-		placeholderData: keepPreviousData,
+		keepPreviousData: true,
 		staleTime: 5_000,
+		onError: (error) => {
+			console.error('Failed to fetch recent items:', error)
+		},
 	})
 
 	const {preferences} = usePreferences()
@@ -24,11 +24,7 @@ export function useListRecents() {
 	// because unlike useListDirectory, we know the max recent items is 50
 	// so they're all already on the client side.
 	const sortedListing = data
-		? sortFilesystemItems(
-				data.filter((item): item is FileSystemItem => item !== null),
-				preferences?.sortBy ?? 'name',
-				preferences?.sortOrder ?? 'ascending',
-			)
+		? sortFilesystemItems(data, preferences?.sortBy ?? 'name', preferences?.sortOrder ?? 'asc')
 		: []
 
 	return {

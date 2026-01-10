@@ -1,18 +1,10 @@
 import path from 'node:path'
 import react from '@vitejs/plugin-react-swc'
 import {defineConfig} from 'vite'
-import {imagetools} from 'vite-imagetools'
 
 // https://vitejs.dev/config/
-
 export default defineConfig({
-	plugins: [
-		react(),
-		imagetools({
-			// Currently we only convert SVGs in features/files/assets/file-items-thumbnails
-			include: /src\/features\/files\/assets\/file-items-thumbnails\/[^?]+\.svg(\?.*)?$/,
-		}),
-	],
+	plugins: [react()],
 	resolve: {
 		alias: {
 			'@/': `${path.resolve(__dirname, 'src')}/`,
@@ -41,6 +33,7 @@ export default defineConfig({
 					colorThief: ['colorthief'],
 				},
 			},
+			external: ['@radix-ui/react-label', '@radix-ui/react-radio-group'],
 		},
 	},
 })

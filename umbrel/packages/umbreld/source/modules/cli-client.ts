@@ -1,11 +1,11 @@
 import process from 'node:process'
 
-import {createTRPCClient, httpLink, createWSClient, wsLink, splitLink} from '@trpc/client'
+import {createTRPCProxyClient, httpLink} from '@trpc/client'
 import fse from 'fs-extra'
 
 import * as jwt from './jwt.js'
 
-import {type AppRouter, httpOnlyPaths} from './server/trpc/common.js'
+import type {AppRouter} from './server/trpc/index.js'
 
 // TODO: Maybe just read the endpoint from the data dir
 const dataDir = process.env.UMBREL_DATA_DIR ?? '/home/umbrel/umbrel'
@@ -17,20 +17,12 @@ async function signJwt() {
 	return token
 }
 
-// The CLI client always authenticates by signing a JWT; no unauthenticated mode.
-// We use HTTP only for `httpOnlyPaths` (needs request/response semantics like cookies/headers), and WS otherwise.
-const trpc = createTRPCClient<AppRouter>({
+const trpc = createTRPCProxyClient<AppRouter>({
 	links: [
-		splitLink({
-			condition: (operation) => httpOnlyPaths.includes(operation.path as (typeof httpOnlyPaths)[number]),
-			true: httpLink({
-				url: trpcEndpoint,
-				headers: async () => ({
-					Authorization: `Bearer ${await signJwt()}`,
-				}),
-			}),
-			false: wsLink({
-				client: createWSClient({url: async () => `${trpcEndpoint}?token=${await signJwt()}`}),
+		httpLink({
+			url: trpcEndpoint,
+			headers: async () => ({
+				Authorization: `Bearer ${await signJwt()}`,
 			}),
 		}),
 	],
@@ -77,25 +69,14 @@ type CliClientOptions = {
 }
 
 export const cliClient = async ({query, args}: CliClientOptions) => {
-	// Parse flags into an object
 	const parsedArgs = parseArgs(args)
 
-	// Split the query into parts and grab the procedure via dot notation
-	const parts = query.split('.')
 	let procedure: any = trpc
-	for (const part of parts) procedure = procedure[part]
+	for (const part of query.split('.')) procedure = procedure[part]
 
-	// Subscription
-	if (parts.at(-1) === 'subscribe') {
-		return await new Promise((resolve, reject) => {
-			procedure(parsedArgs, {
-				onData: (data: any) => console.log(JSON.stringify(data, null, 2)),
-				onError: (error: any) => reject(error),
-				onComplete: () => resolve(void 0),
-			})
-		})
+	try {
+		console.log(await procedure(parsedArgs))
+	} catch (error) {
+		console.log(error)
 	}
-
-	// Query or Mutation
-	console.log(JSON.stringify(await procedure(parsedArgs), null, 2))
 }

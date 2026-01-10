@@ -1,50 +1,27 @@
 import {motion, MotionConfig} from 'framer-motion'
 import {useId, useState} from 'react'
 
+import {ButtonLink} from '@/components/ui/button-link'
 import {FlameIcon} from '@/features/files/assets/flame-icon'
 import {Droppable} from '@/features/files/components/shared/drag-and-drop'
 import {FileItemIcon} from '@/features/files/components/shared/file-item-icon'
 import {TRASH_PATH} from '@/features/files/constants'
-import {useFilesOperations} from '@/features/files/hooks/use-files-operations'
 import {useListDirectory} from '@/features/files/hooks/use-list-directory'
 import {useNavigate} from '@/features/files/hooks/use-navigate'
 import {useIsMobile} from '@/hooks/use-is-mobile'
-import {useConfirmation} from '@/providers/confirmation'
 import {Button} from '@/shadcn-components/ui/button'
+import {useLinkToDialog} from '@/utils/dialog'
 import {t} from '@/utils/i18n'
 
 export function SidebarTrash() {
 	const {navigateToDirectory, currentPath} = useNavigate()
 	const isTrash = currentPath === TRASH_PATH
 	const [isHovering, setIsHovering] = useState(false)
-	const {listing} = useListDirectory(TRASH_PATH, {
-		itemsOnScrollEnd: 3,
-		initialItems: 3,
-	})
+	const {listing} = useListDirectory(TRASH_PATH, {start: 0, count: 3})
 	const isTrashEmpty = listing?.items?.length === 0
-	const {emptyTrash} = useFilesOperations()
-	const confirm = useConfirmation()
+	const linkToDialog = useLinkToDialog()
 	const id = useId()
 	const isMobile = useIsMobile()
-
-	const handleEmptyTrash = async () => {
-		if (isTrashEmpty) return
-		try {
-			await confirm({
-				title: t('files-empty-trash.title'),
-				message: t('files-empty-trash.description'),
-				actions: [
-					{label: t('files-empty-trash.confirm'), value: 'confirm', variant: 'destructive'},
-					{label: t('cancel'), value: 'cancel', variant: 'default'},
-				],
-				icon: FlameIcon,
-			})
-			emptyTrash()
-		} catch (error) {
-			// User cancelled
-		}
-	}
-
 	return (
 		<MotionConfig transition={{duration: 0.2, ease: [0.29, 0.01, 0, 1]}}>
 			<Droppable
@@ -67,10 +44,8 @@ export function SidebarTrash() {
 					return (
 						<motion.div
 							layout
-							className={`flex flex-col items-center ${
-								isExpanded
-									? 'rounded-xl border border-white/6 bg-gradient-to-b from-white/[0.04] to-white/[0.08] p-3'
-									: 'h-[35px] cursor-pointer rounded-lg'
+							className={`flex flex-col items-center bg-gradient-to-b from-white/[0.01] to-white/[0.04] ${
+								isExpanded ? 'rounded-xl border border-white/6 p-3' : 'h-[35px] cursor-pointer rounded-lg'
 							} ${isTrash && 'border-white/6 bg-gradient-to-b !from-white/[0.04] !to-white/[0.08] shadow-button-highlight-soft-hpx'}`}
 							initial={false}
 							onClick={() => {
@@ -86,7 +61,7 @@ export function SidebarTrash() {
 								{/* "Trash" text */}
 								<motion.div
 									layout='position'
-									className={`text-12 text-white/60 ${isExpanded ? 'mb-2' : 'ml-[-18px] mt-[10px]'}`}
+									className={`text-12 text-white/60 ${isExpanded ? 'mb-2' : 'ml-[-15px] mt-2'}`}
 								>
 									{t('files-sidebar.trash')}
 								</motion.div>
@@ -109,7 +84,7 @@ export function SidebarTrash() {
 								{/* Trash SVG */}
 								<motion.div
 									layout='position'
-									className={`${isExpanded ? 'mt-4' : 'ml-[-16px] mt-[-18px]'} flex-shrink-0`}
+									className={`${isExpanded ? 'mt-4' : 'ml-[-13px] mt-[-18px]'} flex-shrink-0`}
 									animate={{
 										scale: isExpanded ? 1 : 0.3,
 									}}
@@ -294,14 +269,13 @@ export function SidebarTrash() {
 												<Button variant='default' onClick={() => navigateToDirectory(TRASH_PATH)}>
 													{t('files-sidebar.trash.open')}
 												</Button>
-												<Button
-													onClick={handleEmptyTrash}
+												<ButtonLink
+													to={isTrashEmpty ? '#' : linkToDialog('files-empty-trash-confirmation')}
 													variant='default'
-													disabled={isTrashEmpty}
 													className={isTrashEmpty ? 'pointer-events-none opacity-50' : ''}
 												>
 													<FlameIcon />
-												</Button>
+												</ButtonLink>
 											</>
 										)}
 									</motion.div>

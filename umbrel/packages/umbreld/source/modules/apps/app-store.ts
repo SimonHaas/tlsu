@@ -39,8 +39,9 @@ export default class AppStore {
 				{
 					onFailedAttempt: (error) => {
 						this.logger.error(
-							`Failed to initialise default repository ${defaultRepository.url}, will retry ${error.retriesLeft} more times.`,
-							error,
+							`Failed to initialise default repository ${defaultRepository.url}: ${
+								(error as Error).message
+							}, will retry ${error.retriesLeft} more times.`,
 						)
 					},
 					retries: 5, // This will do exponential backoff for 1s, 2s, 4s, 8s, 16s
@@ -48,7 +49,7 @@ export default class AppStore {
 			)
 			this.logger.log(`Default repository initialised!`)
 		} catch (error) {
-			this.logger.error(`Failed to initialise default repository`, error)
+			this.logger.error(`Failed to initialise default repository: ${(error as Error).message}`)
 		}
 
 		// Kick off update loop
@@ -74,7 +75,7 @@ export default class AppStore {
 			try {
 				await repository.update()
 			} catch (error) {
-				this.logger.error(`Failed to update ${repository.url}`, error)
+				this.logger.error(`Failed to update ${repository.url}: ${(error as Error).message}`)
 			}
 		}
 	}
@@ -84,7 +85,7 @@ export default class AppStore {
 		if (!repositories) throw new Error('App store not initialised')
 		const registryPromises = repositories.map((repository) =>
 			repository.readRegistry().catch((error) => {
-				this.logger.error(`Failed to read registry from ${repository.url}`, error)
+				this.logger.error(`Failed to read registry from ${repository.url}: ${(error as Error).message}`)
 				return null
 			}),
 		)

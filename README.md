@@ -16,6 +16,7 @@ docker inspect   -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' tl
 docker rm -f $(docker ps -aq)
 
 git clone https://github.com/getumbrel/umbrel.git
+git clone --depth 1 --branch 1.4.0 https://github.com/getumbrel/umbrel.git
 sudo rm -r umbrel/.git
 
 git clone https://github.com/dockur/umbrel.git dockerr/umbrel

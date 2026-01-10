@@ -39,7 +39,7 @@ export default function LoginTest() {
 			<button
 				type='button'
 				onClick={() => {
-					registerMut.mutate({name: 'umbrel', password: 'umbrel', language: 'en'})
+					registerMut.mutate({name: 'umbrel', password: 'umbrel'})
 				}}
 			>
 				{t('create-user')}

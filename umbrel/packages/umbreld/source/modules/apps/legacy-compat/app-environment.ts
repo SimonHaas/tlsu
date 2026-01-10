@@ -6,16 +6,12 @@ import {$} from 'execa'
 import type Umbreld from '../../../index.js'
 
 export default async function appEnvironment(umbreld: Umbreld, command: string) {
-	let inheritStdio = true
-	// Prevent breaking test output
-	if (process.env.TEST === 'true') inheritStdio = false
-
 	const currentFilename = fileURLToPath(import.meta.url)
 	const currentDirname = dirname(currentFilename)
 	const composePath = join(currentDirname, 'docker-compose.yml')
 	const torEnabled = await umbreld.store.get('torEnabled')
 	const options = {
-		stdio: inheritStdio ? 'inherit' : 'pipe',
+		stdio: 'inherit',
 		cwd: umbreld.dataDirectory,
 		env: {
 			UMBREL_DATA_DIR: umbreld.dataDirectory,

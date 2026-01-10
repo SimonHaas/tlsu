@@ -8,7 +8,7 @@ import {getWallpaperThumbUrl, wallpapers} from './wallpaper'
 const prefetchStableMs = 500
 
 export function Prefetcher() {
-	const utils = trpcReact.useUtils()
+	const ctx = trpcReact.useContext()
 	const [triggered, setTriggered] = useState(false)
 	const isLoggedInQ = trpcReact.user.isLoggedIn.useQuery()
 	const isFetching = useIsFetching()
@@ -23,31 +23,31 @@ export function Prefetcher() {
 	function performPrefetch() {
 		const prefetchQueries = [
 			// Settings header
-			utils.system.device,
-			utils.system.version,
-			utils.system.getIpAddresses,
-			utils.system.uptime,
+			ctx.system.device,
+			ctx.system.version,
+			ctx.system.getIpAddresses,
+			ctx.system.uptime,
 
 			// Settings sidebar
-			utils.system.systemDiskUsage,
-			utils.system.systemMemoryUsage,
-			utils.system.cpuUsage,
-			utils.system.cpuTemperature,
+			ctx.system.systemDiskUsage,
+			ctx.system.systemMemoryUsage,
+			ctx.system.cpuUsage,
+			ctx.system.cpuTemperature,
 
 			// Settings switches
-			utils.wifi.supported,
-			utils.wifi.connected,
-			utils.user.is2faEnabled,
-			utils.apps.getTorEnabled,
+			ctx.wifi.supported,
+			ctx.wifi.connected,
+			ctx.user.is2faEnabled,
+			ctx.apps.getTorEnabled,
 
 			// Advanced settings switches
-			utils.system.getReleaseChannel,
-			utils.system.isExternalDns,
+			ctx.system.getReleaseChannel,
+			ctx.system.isExternalDns,
 
 			// Files
-			utils.files.viewPreferences,
-			utils.files.favorites,
-			utils.files.shares,
+			ctx.files.preferences,
+			ctx.files.favorites,
+			ctx.files.shares,
 		]
 
 		Promise.allSettled(prefetchQueries.map((q) => q.prefetch()))

@@ -28,7 +28,3 @@ dependencies: []
 path: ''
 defaultUsername: ''
 defaultPassword: ''
-backupIgnore:
-  - data
-  - logs
-  - cache

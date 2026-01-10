@@ -16,7 +16,6 @@ import {t} from '@/utils/i18n'
 import {assertUnreachable, IS_DEV} from '@/utils/misc'
 
 import {ResettingCover, useReset} from './reset'
-import {RestoreCover} from './restore'
 import {UpdatingCover, useUpdate} from './update'
 
 type SystemStatus = RouterOutput['system']['status']
@@ -35,7 +34,6 @@ export function GlobalSystemStateProvider({children}: {children: ReactNode}) {
 	const jwt = useJwt()
 	const [triggered, setTriggered] = useState(false)
 	const [failure, setFailure] = useState(false)
-	const [restoreFailure, setRestoreFailure] = useState(false)
 	const [shouldLogoutOnRunning, setShouldLogoutOnRunning] = useLocalStorage2('should-logout-on-running', false)
 	const [startShutdownTimer, setStartShutdownTimer] = useState(false)
 	const [shutdownComplete, setShutdownComplete] = useState(false)
@@ -45,7 +43,6 @@ export function GlobalSystemStateProvider({children}: {children: ReactNode}) {
 	const onMutate = async () => {
 		setTriggered(true)
 		setFailure(false)
-		setRestoreFailure(false)
 		setShouldLogoutOnRunning(false)
 		setStartShutdownTimer(false)
 		setShutdownComplete(false)
@@ -63,14 +60,14 @@ export function GlobalSystemStateProvider({children}: {children: ReactNode}) {
 	const clearError = () => setRouterError(null)
 
 	const queryClient = useQueryClient()
-	const utils = trpcReact.useUtils()
+	const ctx = trpcReact.useContext()
 
 	// When the action completes, remember whether it was a success or a failure
 	// and potentially clean up left-over state so the failed action can be
 	// attempted again. We use `failure` below to trigger the error cover.
 	const onSuccess = (success: boolean) => {
 		setFailure(!success)
-		utils.system.status.cancel() // avoid receiving an outdated status
+		ctx.system.status.cancel() // avoid receiving an outdated status
 		if (!success) {
 			setTriggered(false)
 			setShouldLogoutOnRunning(false)
@@ -88,7 +85,7 @@ export function GlobalSystemStateProvider({children}: {children: ReactNode}) {
 	// Force swift and fresh status updates when an action is in progress
 	const systemStatusQ = trpcReact.system.status.useQuery(undefined, {
 		refetchInterval: triggered ? 500 : 10 * MS_PER_SECOND,
-		gcTime: 0,
+		cacheTime: 0,
 	})
 
 	if (!IS_DEV) {
@@ -105,14 +102,6 @@ export function GlobalSystemStateProvider({children}: {children: ReactNode}) {
 	// will report `undefined` again. Handle these cases explicitly below.
 	const status = systemStatusQ.data
 	const prevStatus: SystemStatus | undefined = usePreviousDistinct(status)
-
-	// If status moves away from 'running' without onMutate (e.g., restore),
-	// set `triggered` to enable fast polling and the post-restart redirect.
-	useEffect(() => {
-		if (!triggered && status && status !== 'running') {
-			setTriggered(true)
-		}
-	}, [status, triggered])
 
 	// When global system state is triggered and status switches to anything but
 	// 'running', we know that the action is now in progress. So we'll now wait
@@ -158,28 +147,9 @@ export function GlobalSystemStateProvider({children}: {children: ReactNode}) {
 		}
 	}, [startShutdownTimer, status, systemStatusQ.failureCount, systemStatusQ.isError, triggered])
 
-	// We poll for restore errors only while the system is 'restoring' (not during other non-running states)
-	// - After we just transitioned from 'restoring' -> 'running', we do one more fetch to catch an error reported at the boundary
-	// - If a failure is already latched, keep enabled so the button remains available, but
-	//   we won't poll (refetchInterval is 0 when not restoring)
-	const isRestoring = status === 'restoring'
-	const justFinishedRestoring = prevStatus === 'restoring' && status === 'running'
-	const shouldPollRestoreError = isRestoring || restoreFailure || (justFinishedRestoring && !restoreFailure)
-
-	const restoreErrorQ = trpcReact.backups.restoreStatus.useQuery(undefined, {
-		enabled: shouldPollRestoreError,
-		refetchInterval: isRestoring ? 500 : 0,
-		select: (d) => !!d?.error,
-	})
-
-	useEffect(() => {
-		if (restoreErrorQ.data) setRestoreFailure(true)
-	}, [restoreErrorQ.data])
-
 	// When we come back online, we should continue to show the previous state until we've logged out,
 	// plus, when the action failed, we should show the failure cover until the user interacts with it.
-	const statusToShow =
-		(triggered || failure || restoreFailure) && (!status || status === 'running') ? prevStatus : status
+	const statusToShow = (triggered || failure) && (!status || status === 'running') ? prevStatus : status
 
 	// Debug info can be activated by adding the local storage key 'debug' with a value of `true`
 	const debugInfo = (
@@ -191,8 +161,6 @@ export function GlobalSystemStateProvider({children}: {children: ReactNode}) {
 						prevStatus,
 						statusToShow,
 						triggered,
-						failure,
-						restoreFailure,
 						shouldLogoutOnRunning,
 						startShutdownTimer,
 						shutdownComplete,
@@ -203,8 +171,6 @@ export function GlobalSystemStateProvider({children}: {children: ReactNode}) {
 			</div>
 		</DebugOnlyBare>
 	)
-
-	// Covers are shown based on system status; restore behaves like others now
 
 	if (systemStatusQ.isLoading) {
 		return (
@@ -223,14 +189,6 @@ export function GlobalSystemStateProvider({children}: {children: ReactNode}) {
 					{children}
 					{debugInfo}
 				</GlobalSystemStateContext.Provider>
-			)
-		}
-		case 'restoring': {
-			return (
-				<>
-					<RestoreCover />
-					{debugInfo}
-				</>
 			)
 		}
 		case 'shutting-down': {

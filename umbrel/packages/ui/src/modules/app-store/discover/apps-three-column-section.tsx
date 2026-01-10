@@ -32,13 +32,13 @@ export const AppsThreeColumnSection: React.FC<AppsThreeColumnSectionProps> = ({
 		<div
 			className={cn(
 				cardClass,
-				'flex flex-wrap justify-center gap-x-16 gap-y-8 overflow-hidden p-4 text-center xl:flex-nowrap xl:text-left',
+				'flex flex-wrap justify-center gap-x-16 gap-y-8 overflow-hidden p-4 text-center xl:flex-nowrap xl:justify-start xl:text-left',
 			)}
 		>
 			<div
 				className={cn(
 					'flex w-full flex-col items-center justify-center md:w-auto xl:items-start',
-					textLocation === 'right' && 'xl:order-2',
+					textLocation === 'right' && 'order-2',
 				)}
 			>
 				<p className={sectionOverlineClass}>{overline}</p>
@@ -62,7 +62,13 @@ function ColorApp({app, className}: {app: RegistryApp; className?: string}) {
 	const colors = useColorThief(iconRef)
 
 	return (
-		<div className={cn('relative', colors)}>
+		<div
+			className={cn(
+				'relative',
+				colors &&
+					'opacity-100 duration-200 animate-in fade-in slide-in-from-bottom-3 fill-mode-both [&:nth-child(1)]:delay-100 [&:nth-child(2)]:delay-200 [&:nth-child(3)]:delay-300',
+			)}
+		>
 			<Link
 				to={`/app-store/${app.id}`}
 				className={cn('flex h-[268px] w-40 flex-col justify-stretch rounded-24 bg-white/10 px-3 py-4', className)}

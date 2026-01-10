@@ -1,5 +1,4 @@
 import crypto from 'node:crypto'
-import nodePath from 'node:path'
 
 import fse from 'fs-extra'
 import yaml from 'js-yaml'
@@ -80,7 +79,7 @@ export default class App {
 		try {
 			return await fse.readFile(`${this.#umbreld.dataDirectory}/tor/data/app-${this.id}/hostname`, 'utf-8')
 		} catch (error) {
-			this.logger.error(`Failed to read hidden service for app ${this.id}`, error)
+			this.logger.error(`Failed to read hidden service for app ${this.id}: ${(error as Error).message}`)
 			return ''
 		}
 	}
@@ -98,11 +97,6 @@ export default class App {
 	}
 
 	async patchComposeFile() {
-		const manifest = await this.readManifest()
-		const appRequestsGpuAccess = manifest.permissions?.includes('GPU')
-		const DRI_DEVICE_PATH = '/dev/dri'
-		const deviceHasGpu = await fse.exists(DRI_DEVICE_PATH).catch(() => false)
-
 		const compose = await this.readCompose()
 		for (const serviceName of Object.keys(compose.services!)) {
 			// Temporary patch to fix contianer names for modern docker-compose installs.
@@ -117,21 +111,11 @@ export default class App {
 			}
 
 			// Migrate downloads volume from old `${UMBREL_ROOT}/data/storage/downloads` path to new
-			// `${UMBREL_ROOT}/home/Downloads` path. Also handle raw data directory migration from
-			// `${UMBREL_ROOT}/data/storage` to `${UMBREL_ROOT}/home`.
-			// We need to do this here to handle any future app updates.
+			// `${UMBREL_ROOT}/home/Downloads` path.
+			// We need to do this here to handle any future app updates
 			compose.services![serviceName].volumes = compose.services![serviceName].volumes?.map((volume) => {
-				return (volume as string)
-					?.replace('/data/storage/downloads', `/home/Downloads`)
-					?.replace('/data/storage', `/home`)
+				return (volume as string)?.replace('/data/storage/downloads', `/home/Downloads`)
 			})
-
-			// Pass through host DRI device to all app containers if the app requests it
-			const shouldEnableGpuPassthrough = appRequestsGpuAccess && deviceHasGpu
-			if (shouldEnableGpuPassthrough) {
-				compose.services![serviceName].devices = compose.services![serviceName].devices || []
-				compose.services![serviceName].devices.push(DRI_DEVICE_PATH)
-			}
 		}
 
 		await this.writeCompose(compose)
@@ -163,7 +147,6 @@ export default class App {
 			onFailedAttempt: (error) => {
 				this.logger.error(
 					`Attempt ${error.attemptNumber} installing app ${this.id} failed. There are ${error.retriesLeft} retries left.`,
-					error,
 				)
 			},
 			retries: 2,
@@ -204,9 +187,6 @@ export default class App {
 		this.state = 'ready'
 		this.stateProgress = 0
 
-		// Enable auto-start on boot
-		await this.setAutoStart(true)
-
 		return true
 	}
 
@@ -220,36 +200,26 @@ export default class App {
 			onFailedAttempt: (error) => {
 				this.logger.error(
 					`Attempt ${error.attemptNumber} starting app ${this.id} failed. There are ${error.retriesLeft} retries left.`,
-					error,
 				)
 			},
 			retries: 2,
 		})
 		this.state = 'ready'
 
-		// Enable auto-start on boot
-		await this.setAutoStart(true)
-
 		return true
 	}
 
-	async stop({persistState = false}: {persistState?: boolean} = {}) {
+	async stop() {
 		this.state = 'stopping'
 		await pRetry(() => appScript(this.#umbreld, 'stop', this.id), {
 			onFailedAttempt: (error) => {
 				this.logger.error(
 					`Attempt ${error.attemptNumber} stopping app ${this.id} failed. There are ${error.retriesLeft} retries left.`,
-					error,
 				)
 			},
 			retries: 2,
 		})
 		this.state = 'stopped'
-
-		// Disable auto-start on boot
-		if (persistState) {
-			await this.setAutoStart(false)
-		}
 
 		return true
 	}
@@ -260,9 +230,6 @@ export default class App {
 		await appScript(this.#umbreld, 'start', this.id)
 		this.state = 'ready'
 
-		// Enable auto-start on boot
-		await this.setAutoStart(true)
-
 		return true
 	}
 
@@ -272,7 +239,6 @@ export default class App {
 			onFailedAttempt: (error) => {
 				this.logger.error(
 					`Attempt ${error.attemptNumber} stopping app ${this.id} failed. There are ${error.retriesLeft} retries left.`,
-					error,
 				)
 			},
 			retries: 2,
@@ -316,7 +282,7 @@ export default class App {
 				.filter((line) => /^([1-9][0-9]*|0)$/.test(line)) // Keep only integers
 				.map((line) => parseInt(line, 10)) // And convert
 		} catch (error) {
-			this.logger.error(`Failed to get pids for app ${this.id}`, error)
+			this.logger.error(`Failed to get pids for app ${this.id}: ${(error as Error).message}`)
 			return []
 		}
 	}
@@ -329,7 +295,7 @@ export default class App {
 			// will fail. It happens rarely so simply retrying will catch most cases.
 			return await pRetry(() => getDirectorySize(this.dataDirectory), {retries: 2})
 		} catch (error) {
-			this.logger.error(`Failed to get disk usage for app ${this.id}`, error)
+			this.logger.error(`Failed to get disk usage for app ${this.id}: ${(error as Error).message}`)
 			return 0
 		}
 	}
@@ -352,40 +318,6 @@ export default class App {
 			await $`docker inspect -f {{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}} ${containerName}`
 
 		return containerIp
-	}
-
-	// Returns a validated list of paths that should be ignored when backing up the app
-	// This allows apps to signal to umbrelOS noncritical high churn or high data files
-	// that can be ignored from backups like logs/cache/blockchain data/etc.
-	async getBackupIgnoredFilePaths() {
-		const manifest = await this.readManifest()
-		if (!manifest.backupIgnore) return []
-
-		// Sanitise paths
-		const backupIgnore = []
-		for (let path of manifest.backupIgnore) {
-			// Only allow a limited subset of chars to strip out traversals and other weird stuff we don't want to allow
-			// while supporting simple '*' globbing that Kopia understands in .kopiaignore
-			// TODO: consider adding other globbing chars like '?' (single-char wildcard) and '**' (recursive wildcard).
-			if (!/^[-a-zA-Z0-9._\/*]+$/.test(path)) {
-				this.logger.error(`Invalid backupIgnore path ${path} for app ${this.id}, skipping`)
-				continue // Skip invalid paths
-			}
-
-			// Convert to absolute path and normalise traversals
-			path = nodePath.join(this.dataDirectory, path)
-
-			// Ensure path doesn't escape the app's data directory
-			if (!path.startsWith(this.dataDirectory)) {
-				this.logger.error(`Invalid backupIgnore path ${path} for app ${this.id}, skipping`)
-				continue // Skip paths that escape the app's data directory
-			}
-
-			// Save the sanitised path
-			backupIgnore.push(path)
-		}
-
-		return backupIgnore
 	}
 
 	// Returns a specific widget's info from an app's manifest
@@ -450,29 +382,9 @@ export default class App {
 		const success = await this.store.set('dependencies', filledSelectedDependencies)
 		if (success) {
 			this.restart().catch((error) => {
-				this.logger.error(`Failed to restart '${this.id}'`, error)
+				this.logger.error(`Failed to restart '${this.id}': ${error.message}`)
 			})
 		}
 		return success
-	}
-
-	// Check if app is ignored from backups
-	async isBackupIgnored() {
-		return (await this.store.get('backupIgnore')) || false
-	}
-
-	// Set if app is ignored from backups
-	async setBackupIgnored(backupIgnore: boolean) {
-		return this.store.set('backupIgnore', backupIgnore)
-	}
-
-	// Set if app should auto start on boot
-	async setAutoStart(autoStart: boolean) {
-		return this.store.set('autoStart', autoStart)
-	}
-
-	// Get if app should auto start on boot
-	async shouldAutoStart() {
-		return (await this.store.get('autoStart')) ?? true
 	}
 }

@@ -1,10 +1,11 @@
 // TODO: move to widgets module
 import {useState} from 'react'
 
-import {filesWidgets} from '@/features/files/widgets'
-import {liveUsageWidgets, MAX_WIDGETS} from '@/modules/widgets/shared/constants'
+import {MAX_WIDGETS} from '@/modules/widgets/shared/constants'
 import {systemAppsKeyed, useApps} from '@/providers/apps'
 import {AppState, trpcReact} from '@/trpc/trpc'
+
+import {liveUsageWidgets} from './../modules/widgets/shared/constants'
 
 export function useWidgets() {
 	// Consider having `selectedTooMany` outside this hook
@@ -40,15 +41,7 @@ export function useWidgets() {
 			state: 'ready' as const satisfies AppState,
 			widgets: liveUsageWidgets,
 		},
-
-		// features/files widgets
-		{
-			appId: 'files',
-			icon: systemAppsKeyed['UMBREL_files'].icon,
-			name: systemAppsKeyed['UMBREL_files'].name,
-			state: 'ready' as const satisfies AppState,
-			widgets: filesWidgets,
-		},
+		// Add others here
 	]
 
 	const availableWidgets = apps.userApps
@@ -108,27 +101,27 @@ export function useWidgets() {
 }
 
 function useEnableWidgets() {
-	const utils = trpcReact.useUtils()
+	const ctx = trpcReact.useContext()
 	const widgetQ = trpcReact.widget.enabled.useQuery()
 
 	const enableMut = trpcReact.widget.enable.useMutation({
 		onSuccess: () => {
-			utils.user.invalidate()
-			utils.widget.enabled.invalidate()
+			ctx.user.invalidate()
+			ctx.widget.enabled.invalidate()
 		},
 	})
 
 	const disableMut = trpcReact.widget.disable.useMutation({
 		onSuccess: () => {
-			utils.user.invalidate()
-			utils.widget.enabled.invalidate()
+			ctx.user.invalidate()
+			ctx.widget.enabled.invalidate()
 		},
 	})
 
 	const selected = widgetQ.data ?? []
 	// const setSelected = (widgets: WidgetT[]) => enableMut.mutate({widgets})
 
-	const isLoading = widgetQ.isLoading || enableMut.isPending
+	const isLoading = widgetQ.isLoading || enableMut.isLoading
 
 	return {
 		isLoading,

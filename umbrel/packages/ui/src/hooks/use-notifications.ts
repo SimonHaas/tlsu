@@ -1,12 +1,10 @@
-import {keepPreviousData} from '@tanstack/react-query'
-
-import {trpcReact} from '@/trpc/trpc'
+import {RouterError, trpcReact} from '@/trpc/trpc'
 
 /**
  * Hook to query and clear system notifications
  */
 export function useNotifications() {
-	const utils = trpcReact.useUtils()
+	const utils = trpcReact.useContext()
 
 	// Query to fetch notifications
 	const {
@@ -15,7 +13,10 @@ export function useNotifications() {
 		isError,
 		error,
 	} = trpcReact.notifications.get.useQuery(undefined, {
-		placeholderData: keepPreviousData,
+		keepPreviousData: true,
+		onError: (error: RouterError) => {
+			console.error('Failed to fetch notifications:', error)
+		},
 	})
 
 	// Mutation to clear a notification

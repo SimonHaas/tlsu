@@ -1,5 +1,5 @@
 import {useEffect, useRef, useState} from 'react'
-import {AiOutlineFileExclamation} from 'react-icons/ai'
+import {useNavigate} from 'react-router-dom'
 
 import {useFilesOperations} from '@/features/files/hooks/use-files-operations'
 import {useIsTouchDevice} from '@/features/files/hooks/use-is-touch-device'
@@ -8,7 +8,6 @@ import type {FileSystemItem} from '@/features/files/types'
 import {splitFileName} from '@/features/files/utils/format-filesystem-name'
 import {useIsMobile} from '@/hooks/use-is-mobile'
 import {useQueryParams} from '@/hooks/use-query-params'
-import {useConfirmation} from '@/providers/confirmation'
 import {useSettingsDialogProps} from '@/routes/settings/_components/shared'
 import {Button} from '@/shadcn-components/ui/button'
 import {
@@ -39,7 +38,9 @@ export const EditableName = ({item, view, onFinish}: EditableNameProps) => {
 
 	const {renameItem} = useFilesOperations()
 	const {cancelNewFolder, createFolder} = useNewFolder()
-	const confirm = useConfirmation()
+
+	const navigate = useNavigate()
+	const {addLinkSearchParams} = useQueryParams()
 
 	const isCreatingNewFolder = 'isNew' in item && item.isNew
 	const isFolder = item.type === 'directory'
@@ -84,14 +85,10 @@ export const EditableName = ({item, view, onFinish}: EditableNameProps) => {
 		return () => clearTimeout(timer)
 	}, [])
 
-	const handleSubmit = async (submittedName: string) => {
+	const handleSubmit = (submittedName: string) => {
 		const trimmedName = submittedName.trim()
-		let performRename = true
 		if (isCreatingNewFolder) {
-			// Calculate parent path and the full path for the new folder
-			const parentPath = path.split('/').slice(0, -1).join('/')
-			const fullPath = `${parentPath}/${trimmedName}`
-			createFolder.mutate({path: fullPath})
+			createFolder.mutate({path: path.split('/').slice(0, -1).join('/'), name: trimmedName})
 		} else {
 			// check if the user is changing the extension of a file
 			if (item.type !== 'directory') {
@@ -101,33 +98,18 @@ export const EditableName = ({item, view, onFinish}: EditableNameProps) => {
 				// if the extension is changing, show the extension change confirmation dialog
 				// and let it handle the renaming
 				if (currentNameExtension !== toNameExtension) {
-					try {
-						await confirm({
-							title: toNameExtension
-								? t('files-extension-change.title-add', {extension: toNameExtension})
-								: t('files-extension-change.title-remove'),
-							message: toNameExtension
-								? t('files-extension-change.description-add', {
-										fileName: initialName,
-										extension: toNameExtension,
-									})
-								: t('files-extension-change.description-remove', {fileName: initialName}),
-							actions: [
-								{label: t('files-extension-change.confirm'), value: 'confirm', variant: 'destructive'},
-								{label: t('cancel'), value: 'cancel', variant: 'default'},
-							],
-							icon: AiOutlineFileExclamation,
-						})
-						// Confirmation passed, proceed with rename (handled below)
-					} catch (error) {
-						// User cancelled confirmation
-						performRename = false
-					}
+					return navigate({
+						search: addLinkSearchParams({
+							dialog: 'files-extension-change-confirmation',
+							currentName: item.name,
+							currentPath: item.path,
+							renameTo: trimmedName,
+						}),
+					})
 				}
 			}
-			if (performRename) {
-				renameItem({item, newName: trimmedName})
-			}
+
+			renameItem({item, toName: trimmedName})
 		}
 		onFinish()
 	}
@@ -188,10 +170,6 @@ export const EditableName = ({item, view, onFinish}: EditableNameProps) => {
 		return (
 			<Drawer
 				{...dialogProps}
-				// We set non-modal for this Drawer only on touch devices to prevent an issue where tapping the overlay to close the drawer causes a residual click event to
-				// propagate to the underlying FileItem (where this drawer component is rendered) and tiggers unwanted actions like navigation or reopening the drawer.
-				// We should investigate further in the future and potentially fix this somewhere higher in the layout tree.
-				modal={!isTouchDevice}
 				// ensure state is reset properly when the drawer is closed
 				onOpenChange={(isOpen) => {
 					if (!isOpen) {

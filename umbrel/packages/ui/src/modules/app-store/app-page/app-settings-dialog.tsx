@@ -73,13 +73,13 @@ function AppSettingsDialogForApp({
 	const dialogProps = useDialogOpenProps('app-settings')
 	const [selectedDependencies, setSelectedDependencies] = useState(app.selectedDependencies)
 	const [hadChanges, setHadChanges] = useState(false)
-	const utils = trpcReact.useUtils()
+	const ctx = trpcReact.useContext()
 	const setSelectedDependenciesMut = trpcReact.apps.setSelectedDependencies.useMutation({
 		onSuccess() {
 			// Invalidate this app's state
-			utils.apps.state.invalidate({appId: app.id})
+			ctx.apps.state.invalidate({appId: app.id})
 			// Invalidate list of apps on desktop
-			utils.apps.list.invalidate()
+			ctx.apps.list.invalidate()
 		},
 	})
 
@@ -161,7 +161,9 @@ function AppSettingsDialogForApp({
 							onInstallClick={() => dialogProps.onOpenChange(false)}
 							highlightDependency={openDependency}
 						/>
-					) : null}
+					) : (
+						t('app-settings.no-dependencies')
+					)}
 					{hadChanges && (
 						<DialogFooter>
 							<Close asChild>

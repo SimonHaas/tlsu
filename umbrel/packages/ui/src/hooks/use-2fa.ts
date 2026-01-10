@@ -5,7 +5,7 @@ import {trpcReact} from '@/trpc/trpc'
 import {t} from '@/utils/i18n'
 
 export function use2fa(onEnableChange?: (enabled: boolean) => void) {
-	const ctx = trpcReact.useUtils()
+	const ctx = trpcReact.useContext()
 
 	const enableMut = trpcReact.user.enable2fa.useMutation({
 		onSuccess: () => {

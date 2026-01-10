@@ -1,5 +1,8 @@
 /** Official app repository of the Umbrel App Store */
 export const UMBREL_APP_STORE_REPO = 'https://github.com/getumbrel/umbrel-apps.git'
 
-// Marker file indicating first start after a backup restore
-export const BACKUP_RESTORE_FIRST_START_FLAG = '.is-backups-restore-first-start'
+/** System id of the 'umbrel' user. */
+export const UMBREL_UID = 1000
+
+/** System id of the 'umbrel' group. */
+export const UMBREL_GID = 1000

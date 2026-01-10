@@ -11,7 +11,7 @@ export interface SelectionSlice {
 	isSelectingOnMobile: boolean
 
 	setSelectedItems: (items: FileSystemItem[]) => void
-	setIsSelectingOnMobile: (isSelecting: boolean) => void
+	toggleIsSelectingOnMobile: () => void
 	clearSelectedItems: () => void
 	isItemSelected: (item: FileSystemItem) => boolean
 }
@@ -28,9 +28,12 @@ export const createSelectionSlice: StateCreator<
 		set({selectedItems: items})
 	},
 
-	setIsSelectingOnMobile: (isSelecting: boolean) => {
-		set({isSelectingOnMobile: isSelecting})
-		if (!isSelecting) {
+	toggleIsSelectingOnMobile: () => {
+		const newIsSelecting = !get().isSelectingOnMobile
+		set({
+			isSelectingOnMobile: newIsSelecting,
+		})
+		if (!newIsSelecting) {
 			get().clearSelectedItems()
 		}
 	},
