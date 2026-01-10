@@ -17,3 +17,6 @@ docker rm -f $(docker ps -aq)
 
 git clone https://github.com/getumbrel/umbrel.git
 sudo rm -r umbrel/.git
+
+git clone https://github.com/dockur/umbrel.git dockerr/umbrel
+sudo rm -r dockerr/umbrel/.git

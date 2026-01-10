@@ -1,0 +1,15 @@
+{
+  "name": "Umbrel",
+  "service": "umbrel",
+  "forwardPorts": [80],
+  "portsAttributes": {
+    "80": {
+      "label": "Web",
+      "onAutoForward": "notify"
+    }
+  },
+  "otherPortsAttributes": {
+    "onAutoForward": "ignore"
+  }, 
+  "dockerComposeFile": "codespaces.yml"
+}

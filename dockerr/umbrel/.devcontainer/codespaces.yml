@@ -1,0 +1,12 @@
+services:
+  umbrel:
+    container_name: umbrel
+    image: ghcr.io/dockur/umbrel
+    pid: host
+    ports:
+      - 80:80
+    volumes:
+      - ./umbrel:/data
+      - /var/run/docker.sock:/var/run/docker.sock
+    restart: on-failure
+    stop_grace_period: 1m
