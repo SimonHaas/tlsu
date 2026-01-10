@@ -71,12 +71,12 @@ services:
     stop_grace_period: 1m
 
   umbrel-ui:
-    #build: 
-    #  context: ./umbrel
-    #  dockerfile: packages/ui/Dockerfile.dev
-    #volumes:
-    #  - ${PROJECT_DIR}/umbrel/packages/ui:/app
-    image: dockurr/umbrel
+    #image: dockurr/umbrel
+    build: 
+      context: ./dockerr/umbrel
+      dockerfile: Dockerfile
+      args:
+        VERSION_ARG: 1.4.0
     volumes:
       - ${PROJECT_DIR}/data/umbrel:/data
       #- /home/umbrel/umbrel:/data # for production umbrel installs
