@@ -3,3 +3,5 @@ etc
 var
 data
 .env
+.pnpm-store
+node_modules
