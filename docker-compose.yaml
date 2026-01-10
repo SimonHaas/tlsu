@@ -23,8 +23,9 @@ services:
       - --entrypoints.web.address=:80
       - --entrypoints.websecure.address=:443
       - --entryPoints.websecure.http.tls=true
-      #- --providers.docker=true
-      #- --providers.file.directory=/etc/traefik/dynamic
+      - --providers.docker=true
+      - --providers.docker.exposedByDefault=false
+      - --providers.file.directory=/etc/traefik/dynamic
       #- --providers.file.watch=true
       - --entryPoints.web.address=:80
       #- --experimental.localPlugins.pluginproviderdemo.modulename=github.com/traefik/pluginproviderdemo
@@ -68,6 +69,56 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
     restart: unless-stopped
     stop_grace_period: 1m
+
+  umbrel-ui:
+    #build: 
+    #  context: ./umbrel
+    #  dockerfile: packages/ui/Dockerfile.dev
+    #volumes:
+    #  - ${PROJECT_DIR}/umbrel/packages/ui:/app
+    image: dockurr/umbrel
+    volumes:
+      - ${PROJECT_DIR}/data/umbrel:/data
+      #- /home/umbrel/umbrel:/data # for production umbrel installs
+      - /var/run/docker.sock:/var/run/docker.sock
+    restart: unless-stopped
+    ports:
+      - 8888:80
+    labels:
+      traefik.enable: true
+      traefik.http.routers.umbrel.rule: Host(`umbrel.simonhaas.eu`)
+      traefik.http.routers.umbrel.entrypoints: websecure
+      traefik.http.routers.umbrel.tls: true
+      traefik.http.routers.umbrel.service: umbrel-ui-service
+      traefik.http.middlewares.umbrel-redirect.redirectscheme.scheme: https
+      traefik.http.middlewares.umbrel-headers.headers.customResponseHeaders.Strict-Transport-Security: max-age=63072000; includeSubDomains; preload
+      traefik.http.middlewares.umbrel-headers.headers.customResponseHeaders.Content-Security-Policy: upgrade-insecure-requests
+      traefik.http.routers.umbrel.middlewares: umbrel-headers@docker
+      traefik.http.services.umbrel-ui-service.loadbalancer.server.port: 80
+      traefik.http.services.umbrel-ui-service.loadbalancer.passHostHeader: true
+
+  umbrel-auth:
+    build: 
+      context: ./umbrel/containers/app-auth
+      dockerfile: Dockerfile.dev
+    volumes:
+      - ${PROJECT_DIR}/umbrel/containers/app-auth:/app
+    restart: unless-stopped
+    #ports:
+    #  - 2002:2000
+    environment:
+      UMBREL_AUTH_SECRET: DEADBEEF
+      MANAGER_IP: 10.21.21.4
+      MANAGER_PORT: 3006
+      DASHBOARD_IP: 10.21.21.3
+      DASHBOARD_PORT: 3004
+      # docker exec auth env | grep JWT_SECRET
+      JWT_SECRET: 6c7d5f239fd414af267ff7e5e25633493af8736515157d20fc2a273f8d73092c
+    labels:
+      traefik.enable: true
+      traefik.http.routers.auth.rule: Host(`auth.umbrel.simonhaas.eu`)
+      traefik.http.routers.auth.entrypoints: websecure
+      traefik.http.routers.auth.tls: true
 
 networks:
   default:

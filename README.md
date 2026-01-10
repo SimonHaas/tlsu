@@ -14,3 +14,6 @@ docker network ls
 docker inspect   -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' tlsu-traefik-1
 
 docker rm -f $(docker ps -aq)
+
+git clone https://github.com/getumbrel/umbrel.git
+sudo rm -r umbrel/.git
