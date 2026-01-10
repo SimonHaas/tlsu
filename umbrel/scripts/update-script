@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# This script is used to bootstrap the mender update process
+# The update server references it in the form:
+# https://raw.githubusercontent.com/getumbrel/umbrel/<tag>/scripts/update-script
+
+update_url=""
+
+if ! command -v mender &> /dev/null
+then
+	echo umbrel-update: '{"error": "Mender not installed"}'
+	exit 1
+fi
+
+if cat /var/lib/mender/device_type | grep --quiet 'device_type=raspberrypi'
+then
+	update_url="https://download.umbrel.com/release/1.5.0/umbrelos-pi.update"
+fi
+
+if cat /var/lib/mender/device_type | grep --silent 'device_type=amd64'
+then
+	update_url="https://download.umbrel.com/release/1.5.0/umbrelos-amd64.update"
+fi
+
+# Fix /etc/mender/artifact_info not existing in some OS builds
+if [[ ! -f /etc/mender/artifact_info ]]
+then
+	echo "artifact_name=umbrelOS" > /etc/mender/artifact_info
+fi
+
+mender install "${update_url}"
