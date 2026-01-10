@@ -11,6 +11,6 @@ docker run -it --rm \
 sudo chown -R codespace:codespace etc/ var/
 
 docker network ls
-docker inspect   -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' uptime-kuma_server_1
+docker inspect   -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' tlsu-traefik-1
 
 docker rm -f $(docker ps -aq)

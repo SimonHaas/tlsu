@@ -6,5 +6,8 @@ ff02::1 ip6-allnodes
 ff02::2 ip6-allrouters
 172.18.0.2      e586adc2604d
 
-172.96.1.10 dashboard.umbrel.simonhaas.eu
-172.96.1.10 whoami.umbrel.simonhaas.eu
+# docker inspect   -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' tlsu-traefik-1
+127.0.0.1 dashboard.umbrel.simonhaas.eu
+127.0.0.1 whoami.umbrel.simonhaas.eu
+127.0.0.1 uptime-kuma.umbrel.simonhaas.eu
+127.0.0.1 metube.umbrel.simonhaas.eu
