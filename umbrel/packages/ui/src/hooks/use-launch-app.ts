@@ -37,6 +37,37 @@ export function useLaunchApp() {
 		},
 	})
 
+	function filterServices(services: any[], port: number, provider: string) {
+		console.log('inside filterServices')
+		// 1) Filter by provider
+		const providerServices = services.filter(
+			(service: { provider: any }) => service.provider === provider
+		);
+
+		// 2) Find the service that forwards to the given port
+		for (const service of providerServices) {
+			const servers = service.loadBalancer?.servers;
+			if (!servers) continue;
+
+			for (const server of servers) {
+				try {
+					const url = new URL(server.url);
+					const serverPort = url.port
+					? Number(url.port)
+					: url.protocol === "https:"
+						? 443
+						: 80;
+
+					if (serverPort === port) {
+						return service;
+					}
+				} catch {
+					// ignore invalid URLs
+				}
+			}
+		}
+	}
+
 	const handleLaunch = (appId: string, options?: {path?: string; direct?: boolean}) => {
 		const app = userApp.userAppsKeyed?.[appId]
 
@@ -51,12 +82,21 @@ export function useLaunchApp() {
 			/*** tlsu ***/
 			const win = window.open('about:blank', '_blank')
 			// TODO fetch directly from traefik
-			const fetchUrl = `https://tlsu.${window.location.hostname}/port/${app.port}`
+			const fetchUrl = `https://traefik.umbrel.simonhaas.eu/api/http/services`
+			const provider = 'umbrel'
+			const port = app.port
+			console.log(`app.port: ${port}`)
 			console.log(fetchUrl)
 			fetch(fetchUrl)
-			.then(res => res.text())
-			.then(appUrl => {
-				console.log('Fetched app URL:', appUrl)
+			.then(res => res.json())
+			.then(services => {
+
+				const service = filterServices(services, port, provider)
+
+				const subdomain = service.name
+				console.log(`subdomain: ${subdomain}`)
+				const appUrl = `https://${subdomain}.${window.location.hostname}`
+				console.log('generated app URL:', appUrl)
 				if (win) win.location.href = appUrl
 			})
 			.catch(err => {

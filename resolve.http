@@ -1,0 +1,5 @@
+### traefik services
+GET http://10.21.0.2:8080/api/http/services HTTP/1.1
+
+### traefik routers
+GET http://10.21.0.2:8080/api/http/routers HTTP/1.1

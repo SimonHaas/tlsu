@@ -4,6 +4,18 @@ import {defineConfig} from 'vite'
 
 // https://vitejs.dev/config/
 export default defineConfig({
+	server: {
+		headers: {
+			"Content-Security-Policy": [
+				"default-src 'self'",
+				"script-src 'self' 'unsafe-eval' 'unsafe-inline'",
+				"style-src 'self' 'unsafe-inline'",
+				"img-src 'self' data:",
+				"font-src 'self'",
+				"connect-src 'self' https://traefik.umbrel-dev.local http://10.21.0.2:8080 https://traefik.umbrel.simonhaas.eu",
+			].join("; ")
+    	}
+	},
 	plugins: [react()],
 	resolve: {
 		alias: {
