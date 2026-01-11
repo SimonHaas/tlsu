@@ -38,7 +38,7 @@ export function useLaunchApp() {
 	})
 
 	function filterServices(services: any[], port: number, provider: string) {
-		console.log('inside filterServices')
+		console.log(`inside filterServices: ${services}, ${port}, ${provider}`)
 		// 1) Filter by provider
 		const providerServices = services.filter(
 			(service: { provider: any }) => service.provider === provider
@@ -83,7 +83,8 @@ export function useLaunchApp() {
 			const win = window.open('about:blank', '_blank')
 			// TODO fetch directly from traefik
 			const fetchUrl = `https://traefik.umbrel.simonhaas.eu/api/http/services`
-			const provider = 'umbrel'
+			//const provider = 'umbrel'
+			const provider = 'file'
 			const port = app.port
 			console.log(`app.port: ${port}`)
 			console.log(fetchUrl)
@@ -93,7 +94,7 @@ export function useLaunchApp() {
 
 				const service = filterServices(services, port, provider)
 
-				const subdomain = service.name
+				const subdomain = service.name.split("-", 1)[0]
 				console.log(`subdomain: ${subdomain}`)
 				const appUrl = `https://${subdomain}.${window.location.hostname}`
 				console.log('generated app URL:', appUrl)

@@ -1,0 +1,14 @@
+http:
+  routers:
+    metube-router:
+      rule: "Host(`metube.umbrel.simonhaas.eu`)"
+      entryPoints:
+        - websecure
+      service: metube-service
+      tls: true
+
+  services:
+    metube-service:
+      loadBalancer:
+        servers:
+          - url: "http://10.21.0.6:3700"
