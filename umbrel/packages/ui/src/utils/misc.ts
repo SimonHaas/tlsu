@@ -45,13 +45,73 @@ export function pathJoin(base: string, path: string) {
 	return base.replace(/\/$/, '') + '/' + path.replace(/^\//, '')
 }
 
-// TODO patch this function
-// find traefik route by app.port
-export function appToUrl(app: UserApp) {
+export function appToUrl(app: UserApp): string {
 	console.log(`inside appToUrl - port: ${app.port}, name: ${app.name}`)
-	return isOnionPage()
-		? `${location.protocol}//${app.hiddenService}`
-		: `${location.protocol}//${location.hostname}:111`
+
+	if (isOnionPage()) {
+		return `${location.protocol}//${app.hiddenService}`
+	}
+
+	try {
+		const syncFetchJson = (u: string): any | null => {
+			const xhr = new XMLHttpRequest()
+			xhr.open('GET', u, false)
+			try {
+				xhr.send(null)
+			} catch (e) {
+				return null
+			}
+			if (xhr.status >= 200 && xhr.status < 300) {
+				try {
+					return JSON.parse(xhr.responseText)
+				} catch (e) {
+					return null
+				}
+			}
+			return null
+		}
+
+		const routersData = syncFetchJson('/api/http/routers')
+		const routers = routersData ? (Array.isArray(routersData) ? routersData : Object.values(routersData)) : []
+
+		for (const r of routers) {
+			const serviceName = r.service || r.Service || r.ServiceName || r['service']
+			if (!serviceName) continue
+
+			let serviceData: any = syncFetchJson(`/api/http/services/${encodeURIComponent(serviceName)}`)
+			if (!serviceData) {
+				const sList = syncFetchJson('/api/http/services')
+				if (sList) {
+					serviceData = sList[serviceName] || Object.values(sList).find((x: any) => x && (x.service === serviceName || x.Name === serviceName))
+				}
+			}
+			if (!serviceData) continue
+
+			const servers = serviceData.loadBalancer?.servers || serviceData.LoadBalancer?.Servers || serviceData.servers || serviceData.Servers || []
+			for (const srv of servers) {
+				const urlStr = srv.url || srv.URL || srv.server || srv.Server || srv
+				try {
+					const u = new URL(urlStr)
+					const port = u.port ? parseInt(u.port, 10) : (u.protocol === 'https:' ? 443 : 80)
+					if (port === app.port) {
+						const rule = r.rule || r.Rule || r.rules || ''
+						const hostMatch = /Host\(`([^`]+)`\)/.exec(rule)
+						if (hostMatch && hostMatch[1]) {
+							const host = hostMatch[1]
+							const subdomain = host.split('.')[0]
+							return `${location.protocol}//${subdomain}.${location.hostname}`
+						}
+					}
+				} catch (e) {
+					// ignore parse errors
+				}
+			}
+		}
+	} catch (e) {
+		console.error('appToUrl traefik lookup failed', e)
+	}
+
+	return `${location.protocol}//${location.hostname}:${app.port}`
 }
 
 export function appToUrlWithAppPath(app: UserApp) {

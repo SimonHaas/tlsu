@@ -72,21 +72,21 @@ services:
 
   umbrel-ui:
     #image: dockurr/umbrel
-    image: node:18.19.1-buster
-    command: tail -F anything
-    #build: 
+    #image: node:18.19.1-buster
+    #command: tail -F anything
+    build: 
       #context: ./dockerr/umbrel
-      #context: .
-      #dockerfile: Dockerfile.umbrel
+      context: .
+      dockerfile: Dockerfile.umbrel
       #context: umbrel
       #dockerfile: packages/ui/Dockerfile
-      #args:
-      #  VERSION_ARG: 1.4.0
+      args:
+        VERSION_ARG: 1.4.0
     volumes:
       - ${PROJECT_DIR}/data/umbrel:/data
       #- /home/umbrel/umbrel:/data # for production umbrel installs
       - /var/run/docker.sock:/var/run/docker.sock
-      - ${PROJECT_DIR}/umbrel/packages/ui:/app
+      #- ${PROJECT_DIR}/umbrel/packages/ui:/app
     restart: unless-stopped
     ports:
       - 8888:80
