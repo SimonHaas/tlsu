@@ -121,6 +121,17 @@ services:
       traefik.http.routers.auth.entrypoints: websecure
       traefik.http.routers.auth.tls: true
 
+  tlsu:
+    build:
+      context: resolver
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    labels:
+      traefik.enable: true
+      traefik.http.routers.tlsu.rule: Host(`tlsu.umbrel.simonhaas.eu`)
+      traefik.http.routers.tlsu.entrypoints: websecure
+      traefik.http.routers.tlsu.tls: true
+
 networks:
   default:
     external: true
