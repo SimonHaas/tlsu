@@ -26,5 +26,8 @@ cd dockerr/umbrel/
 docker build --build-arg VERSION_ARG=1.4.0 . -t umbrel-self
 docker run --rm -it -v /var/run/docker.sock:/var/run/docker.sock -p 8889:80 umbrel-self
 
-TODO
-/workspaces/tlsu/umbrel/packages/ui/src/utils/misc.ts
+Mein Patch ist unter 
+/workspaces/tlsu/umbrel/packages/ui/src/hooks/use-launch-app.ts
+mit 
+			/*** tlsu ***/
+markiert.

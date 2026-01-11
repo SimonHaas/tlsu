@@ -47,8 +47,23 @@ export function useLaunchApp() {
 
 		const open = (path?: string) => {
 			trackOpenMut.mutate({appId})
-			const url = path ? urlJoin(appToUrl(app), path) : appToUrlWithAppPath(app)
-			window.open(url, '_blank')?.focus()
+
+			/*** tlsu ***/
+			const win = window.open('about:blank', '_blank')
+			fetch(`https://tlsu.${window.location.hostname}/port/${app.port}`)
+			.then(res => res.text())
+			.then(appUrl => {
+				if (win) win.location.href = appUrl
+			})
+			.catch(err => {
+				console.error('Failed to fetch app URL', err)
+				const url = path ? urlJoin(appToUrl(app), path) : appToUrlWithAppPath(app)
+				if (win) win.location.href = url
+			}).finally(() => {
+				if (win) win.focus()
+			})
+			/*** tlsu ***/
+
 		}
 
 		// If we're already in the credentials dialog, don't show the dialog again.
