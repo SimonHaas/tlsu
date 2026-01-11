@@ -45,13 +45,10 @@ export function pathJoin(base: string, path: string) {
 	return base.replace(/\/$/, '') + '/' + path.replace(/^\//, '')
 }
 
-// TODO patch this function
-// find traefik route by app.port
 export function appToUrl(app: UserApp) {
-	console.log(`inside appToUrl - port: ${app.port}, name: ${app.name}`)
 	return isOnionPage()
 		? `${location.protocol}//${app.hiddenService}`
-		: `${location.protocol}//${location.hostname}:111`
+		: `${location.protocol}//${location.hostname}:${app.port}`
 }
 
 export function appToUrlWithAppPath(app: UserApp) {

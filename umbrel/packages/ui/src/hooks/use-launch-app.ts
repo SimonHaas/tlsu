@@ -50,16 +50,22 @@ export function useLaunchApp() {
 
 			/*** tlsu ***/
 			const win = window.open('about:blank', '_blank')
-			fetch(`https://tlsu.${window.location.hostname}/port/${app.port}`)
+			// TODO fetch directly from traefik
+			const fetchUrl = `https://tlsu.${window.location.hostname}/port/${app.port}`
+			console.log(fetchUrl)
+			fetch(fetchUrl)
 			.then(res => res.text())
 			.then(appUrl => {
+				console.log('Fetched app URL:', appUrl)
 				if (win) win.location.href = appUrl
 			})
 			.catch(err => {
-				console.error('Failed to fetch app URL', err)
+				console.log('Failed to fetch app URL', err)
 				const url = path ? urlJoin(appToUrl(app), path) : appToUrlWithAppPath(app)
 				if (win) win.location.href = url
 			}).finally(() => {
+				console.log('Finished attempting to open app')
+				console.log(win)
 				if (win) win.focus()
 			})
 			/*** tlsu ***/

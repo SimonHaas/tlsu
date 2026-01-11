@@ -31,3 +31,10 @@ Mein Patch ist unter
 mit 
 			/*** tlsu ***/
 markiert.
+
+umbrel dev instance
+cd umbrel
+npm run dev
+Because here we are inside a devcontainer, we have to modify the volume mount in scripts/umbrel-dev.
+We can not modify the environment variable PWD because it has special meaning for bash.
+npm run dev logs

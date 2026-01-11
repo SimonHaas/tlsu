@@ -78,6 +78,7 @@ create_instance() {
   # umbrel-dev.local on OrbStack installs.
   #
   # /sbin/init kicks of systemd as the container entrypoint.
+	#		/*** tlsu ***/
   docker run \
     --detach \
     --interactive \
@@ -86,7 +87,7 @@ create_instance() {
     --name "${INSTANCE_ID}" \
     --hostname "${INSTANCE_ID}" \
     --volume "${INSTANCE_ID}:/data" \
-    --volume "${PWD}:/umbrel-dev:ro" \
+    --volume "/Users/simonhaas/projects/tlsu/umbrel:/umbrel-dev:ro" \
     --label "dev.orbstack.http-port=80" \
     --label "dev.orbstack.domains=${INSTANCE_ID}.local" \
     ${INSTANCE_OPTIONS} \
