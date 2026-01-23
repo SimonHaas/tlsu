@@ -107,8 +107,8 @@ services:
 
   umbrel-auth:
     build: 
-      context: ./umbrel/containers/app-auth
-      dockerfile: Dockerfile.dev
+      context: ./umbrel
+      dockerfile: containers/app-auth/Dockerfile
     volumes:
       - ${PROJECT_DIR}/umbrel/containers/app-auth:/app
     restart: unless-stopped

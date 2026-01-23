@@ -42,7 +42,7 @@ jobs:
         with:
           provenance: false
           platforms: "linux/arm64,linux/amd64"
-          context: ./umbrel/containers/app-auth
-          #file: Dockerfile
+          context: ./umbrel
+          file: ./umbrel/containers/app-auth/Dockerfile
           push: true
           tags: ${{ steps.meta.outputs.tags }}
