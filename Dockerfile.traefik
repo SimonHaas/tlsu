@@ -1,0 +1,5 @@
+# docker build -f ./Dockerfile.traefik -t tlsu-traefik .
+# docker run --rm -it tlsu-traefik ls -la /plugins-local/src/github.com/simonhaas/umbrel
+
+FROM traefik:v3.6
+ADD ./plugins-local/src/github.com/simonhaas/umbrel /plugins-local/src/github.com/simonhaas/umbrel

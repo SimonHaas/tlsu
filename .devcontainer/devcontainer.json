@@ -3,12 +3,16 @@
 {
 	"name": "Go",
 	// Or use a Dockerfile or Docker Compose file. More info: https://containers.dev/guide/dockerfile
-	"image": "mcr.microsoft.com/devcontainers/go:2-1.25-bookworm",
+	//"image": "mcr.microsoft.com/devcontainers/go:2-1.25-bookworm",
+    "build": {
+        // Path is relative to the devcontainer.json file.
+        "dockerfile": "Dockerfile"
+    },
 
 	// Features to add to the dev container. More info: https://containers.dev/features.
 	"features": {
-		"ghcr.io/devcontainers/features/docker-outside-of-docker:1": {},
-		"ghcr.io/devcontainers/features/node:1": {}
+		"ghcr.io/devcontainers/features/docker-outside-of-docker:latest": {},
+	 	"ghcr.io/devcontainers/features/node:latest": {}
 	},
 	"mounts": [
 		"source=${localEnv:HOME}/.ssh,target=/home/vscode/.ssh,type=bind,consistency=cached"
@@ -27,6 +31,9 @@
 				"humao.rest-client"
 			]
 		}
+	},
+	"remoteEnv": {
+		"DOCKER_API_VERSION": "1.43"
 	}
 
 	// Uncomment to connect as root instead. More info: https://aka.ms/dev-containers-non-root.
