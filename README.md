@@ -39,3 +39,5 @@ npm run dev
 Because here we are inside a devcontainer, we have to modify the volume mount in scripts/umbrel-dev.
 We can not modify the environment variable PWD because it has special meaning for bash.
 npm run dev logs
+
+https://doc.traefik.io/traefik/reference/routing-configuration/http/routing/rules-and-priority/#path-pathprefix-and-pathregexp
