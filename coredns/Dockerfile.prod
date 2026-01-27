@@ -4,7 +4,7 @@ ARG BASE=gcr.io/distroless/static-debian12:nonroot
 
 FROM --platform=$BUILDPLATFORM golang:1.25 AS golang
 WORKDIR /tlsu
-ADD coredns .
+ADD https://github.com/coredns/coredns.git#master .
 ADD plugin.cfg .
 RUN go get github.com/Eun/coredns-ipecho && \
     go get github.com/wenerme/coredns-ipin && \
