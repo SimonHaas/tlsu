@@ -1,0 +1,6 @@
+.:53 {
+    log
+    ipin
+    errors
+    health :8080
+}

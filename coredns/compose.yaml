@@ -1,0 +1,13 @@
+services:
+  coredns:
+    #image: coredns/coredns:latest
+    build:
+      context: .
+    #command: -conf /etc/coredns/Corefile -dns.port 53
+    #ports:
+      #- 8053:53 # dig @172.19.0.2 -p 53 127-0-0-1.tlsu.site
+      #- 8053:53/udp
+      #- 8054:8080 # curl 172.19.0.2:8080/health -> 200/OK
+    volumes:
+      #- ./Corefile:/etc/coredns/Corefile
+      - ./Corefile:/Corefile

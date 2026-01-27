@@ -11,6 +11,7 @@ docker run -it --rm \
 sudo chown -R codespace:codespace etc/ var/
 
 docker network ls
+docker network create umbrel_main_network
 docker inspect   -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' tlsu-traefik-1
 
 docker rm -f $(docker ps -aq)
