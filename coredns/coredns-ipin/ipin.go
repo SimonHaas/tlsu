@@ -3,15 +3,17 @@
 package ipin
 
 import (
-	"github.com/coredns/coredns/request"
 	"net"
+
+	"github.com/coredns/coredns/request"
+
+	"regexp"
+	"strconv"
+	"strings"
 
 	"github.com/coredns/coredns/plugin"
 	"github.com/miekg/dns"
 	"golang.org/x/net/context"
-	"regexp"
-	"strconv"
-	"strings"
 )
 
 const Name = "ipin"
@@ -19,12 +21,12 @@ const Name = "ipin"
 type IpInName struct {
 	// When process failed, will call next plugin
 	Fallback bool
-	Ttl uint32
+	Ttl      uint32
 	Next     plugin.Handler
 }
 
-var regIpDash = regexp.MustCompile(`^(\d{1,3}-\d{1,3}-\d{1,3}-\d{1,3})(-\d+)?\.`)
-var regIpv6Dash = regexp.MustCompile(`^([a-f\d]{1,4}-[a-f\d]{0,4}-[a-f\d]{0,4}-?[a-f\d]{0,4}-?[a-f\d]{0,4}-?[a-f\d]{0,4}-?[a-f\d]{0,4}-?[a-f\d]{0,4})\.`)
+var regIpDash = regexp.MustCompile(`^(?:[a-z]+-)?(\d{1,3}-\d{1,3}-\d{1,3}-\d{1,3})(-\d+)?\.`)
+var regIpv6Dash = regexp.MustCompile(`^(?:[a-z]+-)?([a-f\d]{1,4}-[a-f\d]{0,4}-[a-f\d]{0,4}-?[a-f\d]{0,4}-?[a-f\d]{0,4}-?[a-f\d]{0,4}-?[a-f\d]{0,4}-?[a-f\d]{0,4})\.`)
 
 func (self IpInName) Name() string { return Name }
 func (self IpInName) Resolve(ctx context.Context, w dns.ResponseWriter, r *dns.Msg) (*dns.Msg, int, error) {
