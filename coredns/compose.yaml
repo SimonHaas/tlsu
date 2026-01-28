@@ -5,9 +5,8 @@ services:
       context: .
     #command: -conf /etc/coredns/Corefile -dns.port 53
     #ports:
-      #- 8053:53 # dig @172.19.0.2 -p 53 127-0-0-1.tlsu.site
+      #- 8053:53 # dig @172.19.0.2 -p 53 prefix-127-0-0-1.tlsu.site -> 127.0.0.1
       #- 8053:53/udp
       #- 8054:8080 # curl 172.19.0.2:8080/health -> 200/OK
-    volumes:
-      #- ./Corefile:/etc/coredns/Corefile
-      - ./Corefile:/Corefile
+    #volumes:
+      #- ./Corefile:/Corefile

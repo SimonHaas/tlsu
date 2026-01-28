@@ -3,10 +3,12 @@ ARG DEBIAN_IMAGE=debian:stable-slim
 ARG BASE=gcr.io/distroless/static-debian12:nonroot
 
 FROM --platform=$BUILDPLATFORM golang:1.25 AS golang
-WORKDIR /tlsu
+WORKDIR /build
 ADD coredns .
 ADD plugin.cfg .
+ADD coredns-ipin /coredns-ipin
 RUN go get github.com/Eun/coredns-ipecho && \
+    go mod edit -replace github.com/wenerme/coredns-ipin=/coredns-ipin && \
     go get github.com/wenerme/coredns-ipin && \
     go generate && \
     CGO_ENABLED=0 go build -ldflags="-s -w" -o coredns
@@ -15,12 +17,13 @@ FROM --platform=$BUILDPLATFORM ${DEBIAN_IMAGE} AS build
 ARG DEBIAN_FRONTEND=noninteractive
 RUN apt-get -qq update \
     && apt-get -qq --no-install-recommends install libcap2-bin
-COPY --from=golang /tlsu/coredns /coredns
+COPY --from=golang /build/coredns /coredns
 RUN setcap cap_net_bind_service=+ep /coredns
 
 FROM ${BASE}
 COPY --from=build /coredns /coredns
 USER nonroot:nonroot
 WORKDIR /
+ADD Corefile .
 EXPOSE 53 53/udp
 ENTRYPOINT ["/coredns"]
