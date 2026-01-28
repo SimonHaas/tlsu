@@ -8,7 +8,6 @@ import (
 	"github.com/coredns/coredns/request"
 
 	"regexp"
-	"strconv"
 	"strings"
 
 	"github.com/coredns/coredns/plugin"
@@ -25,8 +24,7 @@ type IpInName struct {
 	Next     plugin.Handler
 }
 
-var regIpDash = regexp.MustCompile(`^(?:[a-z]+-)?(\d{1,3}-\d{1,3}-\d{1,3}-\d{1,3})(-\d+)?\.`)
-var regIpv6Dash = regexp.MustCompile(`^(?:[a-z]+-)?([a-f\d]{1,4}-[a-f\d]{0,4}-[a-f\d]{0,4}-?[a-f\d]{0,4}-?[a-f\d]{0,4}-?[a-f\d]{0,4}-?[a-f\d]{0,4}-?[a-f\d]{0,4})\.`)
+var regIpDash = regexp.MustCompile(`^(?:[a-z]+-)?(\d{1,3}-\d{1,3}-\d{1,3}-\d{1,3})\.`)
 
 func (self IpInName) Name() string { return Name }
 func (self IpInName) Resolve(ctx context.Context, w dns.ResponseWriter, r *dns.Msg) (*dns.Msg, int, error) {
@@ -38,7 +36,6 @@ func (self IpInName) Resolve(ctx context.Context, w dns.ResponseWriter, r *dns.M
 	a.Authoritative = true
 
 	matches := regIpDash.FindStringSubmatch(state.QName())
-	matches_v6 := regIpv6Dash.FindStringSubmatch(state.QName())
 	if len(matches) > 1 {
 		ip := matches[1]
 		ip = strings.Replace(ip, "-", ".", -1)
@@ -49,31 +46,6 @@ func (self IpInName) Resolve(ctx context.Context, w dns.ResponseWriter, r *dns.M
 		rr.(*dns.A).A = net.ParseIP(ip).To4()
 
 		a.Answer = []dns.RR{rr}
-
-		if len(matches[2]) > 0 {
-			srv := new(dns.SRV)
-			srv.Hdr = dns.RR_Header{Name: "_port." + state.QName(), Rrtype: dns.TypeSRV, Class: state.QClass(), Ttl: self.Ttl}
-			if state.QName() == "." {
-				srv.Hdr.Name = "_port." + state.QName()
-			}
-			port, _ := strconv.Atoi(matches[2][1:])
-			srv.Port = uint16(port)
-			srv.Target = "."
-
-			a.Extra = []dns.RR{srv}
-		}
-	} else if len(matches_v6) > 1 {
-		ip := matches_v6[1]
-		ip = strings.Replace(ip, "-", ":", -1)
-
-		var rr dns.RR
-		rr = new(dns.AAAA)
-		rr.(*dns.AAAA).Hdr = dns.RR_Header{Name: state.QName(), Rrtype: dns.TypeAAAA, Class: state.QClass(), Ttl: self.Ttl}
-		rr.(*dns.AAAA).AAAA = net.ParseIP(ip).To16()
-
-		a.Answer = []dns.RR{rr}
-	} else {
-		// return empty
 	}
 
 	return a, 0, nil
