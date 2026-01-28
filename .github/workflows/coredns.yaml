@@ -41,7 +41,7 @@ jobs:
         with:
           provenance: false
           platforms: "linux/arm64,linux/amd64"
-          context: .
+          context: coredns
           file: Dockerfile
           push: true
           tags: ${{ steps.meta.outputs.tags }}

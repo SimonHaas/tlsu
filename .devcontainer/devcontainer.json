@@ -12,7 +12,8 @@
 	// Features to add to the dev container. More info: https://containers.dev/features.
 	"features": {
 		"ghcr.io/devcontainers/features/docker-outside-of-docker:latest": {},
-	 	"ghcr.io/devcontainers/features/node:latest": {}
+	 	"ghcr.io/devcontainers/features/node:latest": {},
+		"ghcr.io/tailscale/codespace/tailscale": {}
 	},
 	"mounts": [
 		"source=${localEnv:HOME}/.ssh,target=/home/vscode/.ssh,type=bind,consistency=cached"
@@ -34,7 +35,9 @@
 	},
 	"remoteEnv": {
 		"DOCKER_API_VERSION": "1.43"
-	}
+	},
+	
+	"runArgs": ["--device=/dev/net/tun"]
 
 	// Uncomment to connect as root instead. More info: https://aka.ms/dev-containers-non-root.
 	// "remoteUser": "root"
